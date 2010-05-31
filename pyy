@@ -1,0 +1,40 @@
+#!/usr/bin/python
+import os
+import sys
+import execBash
+import subprocess
+from optparse import OptionParser
+
+#----------------- parseCmd() ----------------#
+## parse the command line arguments
+def parseCmd():
+	usage = "copy the absolute filename to clipboard.\nusage: %prog filename"
+	parser = OptionParser(usage)   #when --help is used or when wrong opt
+	#parser.add_option("-a", "--add-all",
+	#	action="store_true", dest="add_all",
+	#	help="all the untracked file will be added")  # set options.verbose=True
+	#parse_args(arg) arg (default) = sys.argv[1:]
+	#return parser.parse_args()  #options.filename, options.verbose..
+	return parser
+
+#----------------- main() ----------------#
+def main():
+	parser = parseCmd()
+
+	if len(sys.argv) < 2:
+		parser.print_usage()
+		sys.exit(0)
+
+	filename = sys.argv[1]
+	filename = os.path.join(os.getcwd(), filename)
+	print filename
+
+	## write to primary, middle click
+	#os.popen('xsel', 'wb').write(filename)
+	## write to clipboard
+	os.popen('xsel -b', 'wb').write(filename)
+
+#----------------- standalone() ----------------#
+## if standalone, i.e. called directly from shell
+if __name__ == '__main__':
+	main()
