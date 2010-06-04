@@ -13,6 +13,9 @@ import sys
 from optparse import OptionParser
 #import re
 
+#----------------- global variable ----------------#
+file_compare_count = 0
+
 #----------------- parseCmd() ----------------#
 ## parse the command line arguments
 def parseCmd():
@@ -35,16 +38,18 @@ def execBash(cmd):
 
 #----------------- processFile() ----------------#
 def processFile(line, args):
+	global file_compare_count
+
 	# extract the file from the branch specified in args[1]
-	temp_file1 = "difff_%s" % args[1]
-	temp_file2 = "difff_%s" % args[2]
-	cmd_git_show="git show %s:%s > %s 2>/dev/null" % (args[1], line, temp_file1)
+	temp_file1 = "difff_%s_%s" % (args[0], file_compare_count)
+	temp_file2 = "difff_%s_%s" % (args[1], file_compare_count)
+	cmd_git_show="git show %s:%s > %s 2>/dev/null" % (args[0], line, temp_file1)
 	execBash(cmd_git_show)
-	cmd_git_show="git show %s:%s > %s 2>/dev/null" % (args[2], line, temp_file2)
+	cmd_git_show="git show %s:%s > %s 2>/dev/null" % (args[1], line, temp_file2)
 	execBash(cmd_git_show)
-	if len(args)==4:
-		temp_file3 = "difff_%s" % args[3]
-		cmd_git_show="git show %s:%s > %s 2>/dev/null" % (args[3], line, temp_file3)
+	if len(args)==3:
+		temp_file3 = "difff_%s_%s" % (args[2], file_compare_count)
+		cmd_git_show="git show %s:%s > %s 2>/dev/null" % (args[2], line, temp_file3)
 		execBash(cmd_git_show)
 		# bcompare a b c show the pane in: (a c b)
 		cmd_bcompare="bcompare %s %s %s" % (temp_file1, temp_file3, temp_file2)
@@ -53,7 +58,29 @@ def processFile(line, args):
 
 	## execute the command
 	print ("%s: %s " % (line, cmd_bcompare))
-	execBash(cmd_bcompare)
+	#execBash(cmd_bcompare)							# wait for child to exit
+	subprocess.Popen(cmd_bcompare, shell=True)		# don't wait for child to exit
+	file_compare_count += 1
+
+	if file_compare_count==10:
+		file_compare_count = 0
+		user_action = raw_input("continue? (y/n)")
+		if user_action == 'n':
+			execBash("rm -rf difff*")
+			sys.exit(0)
+
+
+#----------------- checkOtherBranch() ----------------#
+def checkOtherBranch(line, args, index):
+	cmd_git_show="git show %s:%s 2>/dev/null" % (args[index], line)
+	retcode = subprocess.call(cmd_git_show, shell=True)
+	if retcode == 0:
+		## git show found the file
+		processFile(line, args[1:])
+	elif index < (len(args)-1):
+		checkOtherBranch(line, args, index+1)
+	else:
+		pass
 
 #----------------- list_file() ----------------#
 def list_file(lines):
@@ -119,15 +146,20 @@ def main():
 		## check to make sure it is file, then process it
 		if os.path.isfile(result.group(1)):
 			#print result.group(1)
-			processFile(result.group(1), args)
+			processFile(result.group(1), args[1:])
 		else:
 			print ("WARN!! %s (not file)" % (result.group(1),))
+			## file not found or not file
+			## corresponding file may exists on other branch
+			checkOtherBranch(result.group(1), args[1:], 0)
 
 		## delete created files
-		for my_branch in args[1:]:
-			temp_file="difff_%s" % (my_branch)
-			if os.path.isfile(temp_file):
-				os.remove(temp_file)
+		#for my_branch in args[1:]:
+		#	temp_file="difff_%s" % (my_branch)
+		#	if os.path.isfile(temp_file):
+		#		os.remove(temp_file)
+
+	execBash("rm -rf difff*")
 
 #----------------- standalone() ----------------#
 ## if standalone, i.e. called directly from shell
