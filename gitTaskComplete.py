@@ -22,6 +22,8 @@ def parseCmd():
 			help="set the duration for the commits to be considered (default is 1 hour)")
 	parser.add_option("-n", "--set-author",dest="author",
 			help="set the author name for the commits to be considered")
+	parser.add_option("-s", "--seach-commit-msg",dest="searchstr",
+			help="search for a string pattern in commit message")
 	#parse_args(arg) arg (default) = sys.argv[1:]
 	return parser.parse_args()  #options.filename, options.verbose..
 
@@ -51,6 +53,9 @@ def main():
 
 	## look for sub-project which is most likely commited by user recently
 	cmd='repo forall -p -c git log --since="%s" --author="%s" --pretty=oneline' % (duration, author)
+	if options.searchstr:
+		cmd=cmd + ' -S"%s"' % (options.searchstr)
+
 	print("recursive searching for each sub-projects for commits since last %s from %s" %(duration, author))
 	log_result=execBash(cmd).splitlines()
 	#print log_result
