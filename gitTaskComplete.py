@@ -18,23 +18,31 @@ from optparse import OptionParser
 ## parse the command line arguments
 def parseCmd():
 	parser = OptionParser()
-	parser.add_option("-t", "--set-duration",dest="duration",
+	parser.add_option("--since", "--set-duration",dest="duration",
 			help="set the duration for the commits to be considered (default is 1 hour)")
-	parser.add_option("-n", "--set-author",dest="author",
+	parser.add_option("--author", "--set-author",dest="author",
 			help="set the author name for the commits to be considered")
-	parser.add_option("-s", "--seach-commit-msg",dest="searchstr",
+	parser.add_option("--grep", "--seach-commit-msg",dest="searchstr",
 			help="search for a string pattern in commit message")
+	parser.add_option("-x", "--extra-parameter",dest="extra_params",
+			help="use extra parameter to fine tune the search. \
+				  both parameter and value must be inside single quote \
+				  e.g. '-n 1' to search for just one commit")
 	#parse_args(arg) arg (default) = sys.argv[1:]
 	return parser.parse_args()  #options.filename, options.verbose..
 
 #----------------- execBash() ----------------#
 def execBash(cmd):
-	#print cmd
+	print cmd
 	p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-	out = p.stdout.read()
+	#(stdoutdata, stderrdata) = p.communicate()
+	stdoutdata = p.communicate()[0]
+	p.poll()
+	if p.returncode != 0:
+		print ("\033[1;31mWarning!! command not ended properly. exit status = %d\033[0m" %(p.returncode))
+	#out = p.stdout.read()
 	#print out
-	return out
-
+	return stdoutdata
 
 #----------------- main() ----------------#
 def main():
@@ -51,11 +59,14 @@ def main():
 	if options.author:
 		author=options.author
 
-	## look for sub-project which is most likely commited by user recently
-	cmd='repo forall -p -c git log --since="%s" --author="%s" --pretty=oneline' % (duration, author)
+	cmd='repo forall -p -c git log --since="%s" --author="%s" --pretty=oneline ' % (duration, author)
 	if options.searchstr:
-		cmd=cmd + ' -S"%s"' % (options.searchstr)
+		cmd=cmd + ' --grep"%s"' % (options.searchstr)
 
+	if options.extra_params:
+		cmd=cmd + '%s' %(options.extra_params)
+
+	## look for sub-project which is most likely commited by user recently
 	print("recursive searching for each sub-projects for commits since last %s from %s" %(duration, author))
 	log_result=execBash(cmd).splitlines()
 	#print log_result
@@ -63,13 +74,20 @@ def main():
 		#print line
 		proj_name=re.match(r"project (.*)/", line)
 		if proj_name:
-			prompt_msg = "add %s: log=%s (y/n)? " %(proj_name.group(1), log_result[i+1])
-			shouldAdd=raw_input(prompt_msg)
-			if 'y' == shouldAdd:
-				commit_msg += "%s: %s\n" %(proj_name.group(1), log_result[i+1])
-				#print("commit_msg=%s" %(commit_msg))
-			#print proj_name.group()
-			#print log_result[i+1]
+			## recursively get all commits from one project
+			for commit_id in log_result[i+1:]:
+				## check if there is anymore commit under the same project
+				if (re.match(r"[0-9a-z]{40}", commit_id)):
+					prompt_msg = "add %s: log=%s (y/n)? " %(proj_name.group(1), commit_id)
+					shouldAdd=raw_input(prompt_msg)
+					if 'y' == shouldAdd:
+						commit_msg += "%s: %s\n" %(proj_name.group(1), log_result[i+1])
+						#print("commit_msg=%s" %(commit_msg))
+						#print proj_name.group()
+						#print log_result[i+1]
+				else:
+					## no more commits under this project
+					break
 
 	## ready to commit
 	if commit_msg:
@@ -79,11 +97,11 @@ def main():
 
 		if "y"==shouldUse:
 			commit_msg_format = "%s\n\n%s" %(first_line_summary.group(1), commit_msg)
-			cmd = "git commit -am '%s'" % (commit_msg_format)
-		elif "n"==shouldUse:
+		else:
 			user_oneline_summary=raw_input("Please input your first line summary below:\n")
-			cmd = "git commit -am '%s\n\n%s'" %(user_oneline_summary, commit_msg)
+			commit_msg_format = "%s\n\n%s" % (user_oneline_summary, commit_msg)
 
+		cmd = "git commit -am '%s'" % (commit_msg_format)
 		msg_ready="%s\ncommit message:\n%s \n%s\nReady to commit: (y/n)? " %("-"*80 ,commit_msg_format, "-"*80)
 		readyToCommit=raw_input(msg_ready)
 		if "y"==readyToCommit:
