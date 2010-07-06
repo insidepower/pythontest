@@ -1,8 +1,9 @@
 #!/usr/bin/python
-# git config user.name
-# git log --author="Khian Nam"
+# this file is to be placed at .repo/repo/subcmds/compl.py
 '''
 usage :
+repo compl --author "Xinyu Chen" --since "2 years ago"
+repo compl --since "2 years ago"
 '''
 import optparse
 import subprocess
@@ -77,7 +78,7 @@ class Compl(Command):
 		cmd=('repo forall -p -c git log --since="%s" --author="%s" --pretty=oneline'
 				% (duration, author))
 		if options.searchstr:
-			cmd=cmd + ' --grep"%s"' % (options.searchstr)
+			cmd=cmd + ' --grep="%s"' % (options.searchstr)
 
 		if options.extra_params:
 			cmd=cmd + '%s' %(options.extra_params)
@@ -123,11 +124,13 @@ class Compl(Command):
 				commit_msg_format = "%s\n\n%s" % (line1_msg, commit_msg)
 
 			# get the list of files changes too
-			files_changes=('files changes to be added:\n\033[1;32m%s\033[0m'
-							% self.execBash("git ls-files -m"))
+			#files_changes=('files changes to be added:\n\033[1;32m%s\033[0m'
+			#				% self.execBash("git ls-files -m"))
+			git_status=('git status: \n%s' % self.execBash("git status"))
 			cmd = "git commit -am '%s'" % (commit_msg_format)
 			msg_ready=("%s\ncommit message:\n%s \n%s\n%s\nReady to commit: (y/n)? "
-							%("-"*120 ,commit_msg_format, "-"*120, files_changes))
+							#%("-"*120 ,commit_msg_format, "-"*120, files_changes))
+							%("-"*120 ,commit_msg_format, "-"*120, git_status))
 			readyToCommit=raw_input(msg_ready)
 			if "y"==readyToCommit:
 				out=self.execBash(cmd)
