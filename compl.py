@@ -31,27 +31,29 @@ class Compl(Command):
 				del parser.rargs[0]
 		#parser = OptionParser()
 		parser.add_option("--since", "--set-duration",dest="duration",
-				help="set the duration for the commits to be considered (default is 1 hour)")
+				help="set the duration for the commits to be "
+						"considered (default is 1 hour)")
 		parser.add_option("--author", "--set-author",dest="author",
 				help="set the author name for the commits to be considered")
 		parser.add_option("--grep", "--seach-commit-msg",dest="searchstr",
 				help="search for a string pattern in commit message")
 		parser.add_option("-x", "--extra-parameter",dest="extra_params",
-				help="use extra parameter to fine tune the search. \
-					  both parameter and value must be inside single quote \
-					  e.g. '-n 1' to search for just one commit")
+				help="use extra parameter to fine tune the search. "
+					  "both parameter and value must be inside single quote "
+					  "e.g. '-n 1' to search for just one commit")
 		#parse_args(arg) arg (default) = sys.argv[1:]
 		#return parser.parse_args()  #options.filename, options.verbose..
 
 #----------------- execBash() ----------------#
 	def execBash(self, cmd):
-		print cmd
+		#print cmd
 		p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
 		#(stdoutdata, stderrdata) = p.communicate()
 		stdoutdata = p.communicate()[0]
 		p.poll()
 		if p.returncode != 0:
-			print ("\033[1;31mWarning!! command not ended properly. exit status = %d\033[0m" %(p.returncode))
+			print ("\033[1;31mWarning!! command not ended properly."
+					"exit status = %d\033[0m" %(p.returncode))
 		#out = p.stdout.read()
 		#print out
 		return stdoutdata
@@ -67,11 +69,13 @@ class Compl(Command):
 			duration=options.duration
 
 		## set the author name
-		author=(re.match(r"[^\n]*", self.execBash("git config user.name"))).group()
+		current_user=self.execBash("git config user.name")
+		author=(re.match(r"[^\n]*", current_user)).group()
 		if options.author:
 			author=options.author
 
-		cmd='repo forall -p -c git log --since="%s" --author="%s" --pretty=oneline ' % (duration, author)
+		cmd=('repo forall -p -c git log --since="%s" --author="%s" --pretty=oneline'
+				% (duration, author))
 		if options.searchstr:
 			cmd=cmd + ' --grep"%s"' % (options.searchstr)
 
@@ -79,7 +83,9 @@ class Compl(Command):
 			cmd=cmd + '%s' %(options.extra_params)
 
 		## look for sub-project which is most likely commited by user recently
-		print("recursive searching for each sub-projects for commits since last %s from %s" %(duration, author))
+		print("recursive searching for each sub-projects for commits "
+				"since last %s from %s" %(duration, author))
+		print cmd
 		log_result=self.execBash(cmd).splitlines()
 		#print log_result
 		for i, line in enumerate(log_result):
@@ -90,10 +96,12 @@ class Compl(Command):
 				for commit_id in log_result[i+1:]:
 					## check if there is anymore commit under the same project
 					if (re.match(r"[0-9a-z]{40}", commit_id)):
-						prompt_msg = "add %s: log=%s (y/n)? " %(proj_name.group(1), commit_id)
+						prompt_msg = ("\033[1;34madd %s: log=%s \033[0m(y/n)? "
+										%(proj_name.group(1), commit_id[:120]))
 						shouldAdd=raw_input(prompt_msg)
 						if 'y' == shouldAdd:
-							commit_msg += "%s: %s\n" %(proj_name.group(1), log_result[i+1])
+							commit_msg += ("%s: %s\n"
+									%(proj_name.group(1), commit_id[:120]))
 							#print("commit_msg=%s" %(commit_msg))
 							#print proj_name.group()
 							#print log_result[i+1]
@@ -105,16 +113,21 @@ class Compl(Command):
 		if commit_msg:
 			first_line_summary=re.match(r".*?: [0-9a-z]{40} (.*)", commit_msg)
 			#print ("match %s " %(first_line_summary.group(1)))
-			shouldUse=raw_input("\nuse line below as the 1st line summary:\n%s (y/n)? " %first_line_summary.group(1))
+			shouldUse=raw_input("\nuse line below as the 1st line "
+								"summary:\n%s (y/n)? " %first_line_summary.group(1))
 
 			if "y"==shouldUse:
 				commit_msg_format = "%s\n\n%s" %(first_line_summary.group(1), commit_msg)
 			else:
-				user_oneline_summary=raw_input("Please input your first line summary below:\n")
-				commit_msg_format = "%s\n\n%s" % (user_oneline_summary, commit_msg)
+				line1_msg=raw_input("Please input your first line summary below:\n")
+				commit_msg_format = "%s\n\n%s" % (line1_msg, commit_msg)
 
+			# get the list of files changes too
+			files_changes=('files changes to be added:\n\033[1;32m%s\033[0m'
+							% self.execBash("git ls-files -m"))
 			cmd = "git commit -am '%s'" % (commit_msg_format)
-			msg_ready="%s\ncommit message:\n%s \n%s\nReady to commit: (y/n)? " %("-"*80 ,commit_msg_format, "-"*80)
+			msg_ready=("%s\ncommit message:\n%s \n%s\n%s\nReady to commit: (y/n)? "
+							%("-"*120 ,commit_msg_format, "-"*120, files_changes))
 			readyToCommit=raw_input(msg_ready)
 			if "y"==readyToCommit:
 				out=self.execBash(cmd)
