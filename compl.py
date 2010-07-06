@@ -3,7 +3,10 @@
 '''
 usage :
 repo compl --author "Xinyu Chen" --since "2 years ago"
-repo compl --since "2 years ago"
+repo compl --since "2 years ago"     ### note: default --author=current git author
+repo compl --grep="wrapper around" --author "Niko Catania" --since="2 years"
+repo compl --grep="wrapper around" --author "Niko Catania" --since="2 years" -x "-n 1"
+repo compl     ### note: default --since=1 hour, default --author=current git author
 '''
 import optparse
 import subprocess
@@ -81,7 +84,7 @@ class Compl(Command):
 			cmd=cmd + ' --grep="%s"' % (options.searchstr)
 
 		if options.extra_params:
-			cmd=cmd + '%s' %(options.extra_params)
+			cmd=cmd + ' %s' %(options.extra_params)
 
 		## look for sub-project which is most likely commited by user recently
 		print("recursive searching for each sub-projects for commits "
@@ -126,7 +129,9 @@ class Compl(Command):
 			# get the list of files changes too
 			#files_changes=('files changes to be added:\n\033[1;32m%s\033[0m'
 			#				% self.execBash("git ls-files -m"))
-			git_status=('git status: \n%s' % self.execBash("git status"))
+			git_status = subprocess.Popen("git status", shell=True,
+											stdout=subprocess.PIPE).stdout.read()
+			git_status='git status: \n' + git_status
 			cmd = "git commit -am '%s'" % (commit_msg_format)
 			msg_ready=("%s\ncommit message:\n%s \n%s\n%s\nReady to commit: (y/n)? "
 							#%("-"*120 ,commit_msg_format, "-"*120, files_changes))
