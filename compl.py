@@ -1,12 +1,12 @@
 #!/usr/bin/python
-# this file is to be placed at .repo/repo/subcmds/compl.py
+# this file is to be placed at .repo/repo/subcmds/commit.py
 '''
 usage :
-repo compl --author "Xinyu Chen" --since "2 years ago"
-repo compl --since "2 years ago"     ### note: default --author=current git author
-repo compl --grep="wrapper around" --author "Niko Catania" --since="2 years"
-repo compl --grep="wrapper around" --author "Niko Catania" --since="2 years" -x "-n 1"
-repo compl     ### note: default --since=1 hour, default --author=current git author
+repo commit --author "Xinyu Chen" --since "2 years ago"
+repo commit --since "2 years ago"     ### note: default --author=current git author
+repo commit --grep="wrapper around" --author "Niko Catania" --since="2 years"
+repo commit --grep="wrapper around" --author "Niko Catania" --since="2 years" -x "-n 1"
+repo commit     ### note: default --since=1 hour, default --author=current git author
 '''
 import optparse
 import subprocess
@@ -20,10 +20,11 @@ from command import Command
 #----------------- global variable ----------------#
 
 
-class Compl(Command):
+class Commit(Command):
 	helpSummary = """mark a task as complete and get name of anroid
 				     projects changed related to the task"""
 	helpUsage = ""
+	commit_file="commit.log"
 
 #----------------- parseCmd() ----------------#
 ## parse the command line arguments
@@ -60,7 +61,44 @@ class Compl(Command):
 					"exit status = %d\033[0m" %(p.returncode))
 		#out = p.stdout.read()
 		#print out
-		return stdoutdata
+		return (stdoutdata, p.returncode)
+
+
+#----------------- append_log() ----------------#
+	def append_log(self, author, msg):
+		# check if the commit log exist
+		filepath=os.path.join(os.getcwd(), self.commit_file)
+		print filepath
+		if not os.path.isfile(filepath):
+			print("\033[1;31mWarning!! %s does not exist, are you in commitlog "
+					"directory?\033[0m " %(self.commit_file))
+			input=raw_input("If you are sure you are in commitlog "
+					"directory, do you want to create the %s now? (y/n) " % self.commit_file)
+			if input == 'y':
+				self.execBash("touch %s" % self.commit_file)
+			else:
+				print("\033[1;31m File not created."
+					"Application Ended\033[0m")
+				sys.exit(2)
+
+		# append the details to commit log
+		log_date=self.execBash("date")[0]
+		log_msg="-"*120 + "\nAuthor: " +author+ "\nDate: " +log_date+"\n"+msg
+		cmd=("mv -f %s %s.tmp && echo '%s' > %s"
+				% (self.commit_file, self.commit_file, log_msg, self.commit_file))
+		status = self.execBash(cmd)[1]
+		if status != 0:
+			self.execBash("rm -f %s" % self.commit_file)
+			print("\033[1;31mWarning!! Failed to execute %s."
+					"Application Ended (%d)\033[0m" % (cmd, status))
+			sys.exit(2)
+		cmd="cat %s.tmp >> %s" % (self.commit_file, self.commit_file)
+		status = self.execBash(cmd)[1]
+		if status != 0:
+			self.execBash("rm -f %s" % self.commit_file)
+			print("\033[1;31mWarning!! Failed to execute %s."
+					"Application Ended (%d)\033[0m" % (cmd, status))
+			sys.exit(2)
 
 #----------------- main() ----------------#
 	def Execute(self, options, args):
@@ -68,12 +106,12 @@ class Compl(Command):
 		commit_msg=""
 
 		## set the duration for the commits to be considered
-		duration="1 hour"
+		duration="2 hour"
 		if options.duration:
 			duration=options.duration
 
 		## set the author name
-		current_user=self.execBash("git config user.name")
+		current_user=self.execBash("git config user.name")[0]
 		author=(re.match(r"[^\n]*", current_user)).group()
 		if options.author:
 			author=options.author
@@ -90,7 +128,7 @@ class Compl(Command):
 		print("recursive searching for each sub-projects for commits "
 				"since last %s from %s" %(duration, author))
 		print cmd
-		log_result=self.execBash(cmd).splitlines()
+		log_result=self.execBash(cmd)[0].splitlines()
 		#print log_result
 		for i, line in enumerate(log_result):
 			#print line
@@ -138,8 +176,19 @@ class Compl(Command):
 							%("-"*120 ,commit_msg_format, "-"*120, git_status))
 			readyToCommit=raw_input(msg_ready)
 			if "y"==readyToCommit:
-				out=self.execBash(cmd)
+				# modify the commit log to include some details
+				self.append_log(author, commit_msg_format)
+				# run git commit
+				(out, status)=self.execBash(cmd)
 				print out
+
+				if status==0:
+					# commit successfully, remove the temporary file
+					self.execBash("rm %s.tmp" % (self.commit_file))
+				else:
+					# not commit, revert change to commit_file
+					self.execBash("rm %s && mv %s.tmp %s"
+							%(self.commit_file, self.commit_file, self.commit_file))
 				#out=execBash("git log -n1")
 				#print("show the last commit")
 				#print out
