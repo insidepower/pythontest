@@ -64,6 +64,14 @@ class Commit(Command):
 		#print out
 		return (stdoutdata, p.returncode)
 
+#----------------- get_server_update() ----------------#
+	def get_server_update(self):
+		(out, status)=self.execBash("git pull")
+		if status != 0:
+			print out
+			print("\033[1;31mWarning!! Not able to get the update from "
+					"server! Application Ended.\033[0m ")
+			sys.exit(2)
 
 #----------------- append_log() ----------------#
 	def append_log(self, author, msg):
@@ -75,10 +83,13 @@ class Commit(Command):
 			if os.path.isdir(os.path.join(os.getcwd(), self.commit_dir)):
 				## cd into commit_dir directory
 				os.chdir(self.commit_dir)
-				print("we are at...%s" % os.getcwd())
+				## get update from server
+				self.get_server_update()
 				filepath=os.path.join(os.getcwd(), self.commit_file)
 				if not os.path.isfile(filepath):
 					print("\033[1;31mWarning!! %s does not exist in %s! "
+							"Have you deleted the file? use 'git checkout HEAD "
+							"commit.log' to restore the file. "
 							"Application Ended.\033[0m " %(self.commit_file,
 								os.getcwd()))
 					os.chdir(self.current_dir)
@@ -86,6 +97,7 @@ class Commit(Command):
 			else:
 				## commit_dir not exists, quit
 				print("\033[1;31mWarning!! Directory %s does not exist! "
+						"Have you updated your manifest? "
 						"Application Ended.\033[0m " %(self.commit_dir))
 				os.chdir(self.current_dir)
 				sys.exit(2)
@@ -100,9 +112,11 @@ class Commit(Command):
 			#		"Application Ended\033[0m")
 			#	sys.exit(2)
 
+		## get update from server
+		self.get_server_update()
 		# append the details to commit log
 		log_date=self.execBash("date")[0]
-		log_msg="-"*120 + "\nAuthor: " +author+ "\nDate  : " +log_date+"\n"+msg
+		log_msg="\nAuthor: " +author+ "\nDate  : " +log_date+"\n"+msg+ "-"*120
 		cmd=("mv -f %s %s.tmp && echo '%s' > %s"
 				% (self.commit_file, self.commit_file, log_msg, self.commit_file))
 		status = self.execBash(cmd)[1]
