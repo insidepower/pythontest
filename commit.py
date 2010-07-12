@@ -24,6 +24,7 @@ class Commit(Command):
 	helpSummary = """create commit log"""
 	helpUsage = ""
 	current_dir=""
+	git_current_branch=""
 	commit_file="commit.log"
 	commit_dir="commitlog"
 
@@ -58,23 +59,37 @@ class Commit(Command):
 		stdoutdata = p.communicate()[0]
 		p.poll()
 		if p.returncode != 0:
-			print ("\033[1;31mWarning!! command not ended properly."
-					"exit status = %d\033[0m" %(p.returncode))
+			print ("\033[1;31mWarning!! command (%s) not ended properly."
+					"exit status = %d\033[0m" %(cmd, p.returncode))
 		#out = p.stdout.read()
 		#print out
 		return (stdoutdata, p.returncode)
 
 #----------------- get_server_update() ----------------#
 	def get_server_update(self):
-		(out, status)=self.execBash("git pull")
+		out = self.execBash("cat .git/HEAD")[0]
+		if out.startswith('ref: '):
+			self.git_current_branch=out[5:-1]
+		else:
+			print("\033[1;31mWarning!! no branch detected on current HEAD. "
+					"Have you checkout a branch in directory commitlog? "
+					"HEAD content=<%s>. "
+					"Application Ended.\033[0m " %(self.git_current_branch))
+			sys.exit(2)
+		print ("getting update from server and merge to current branch %s..."
+				% self.git_current_branch)
+		(out, status)=self.execBash("git pull conti_dev %s" % self.git_current_branch)
 		if status != 0:
 			print out
 			print("\033[1;31mWarning!! Not able to get the update from "
 					"server! Application Ended.\033[0m ")
 			sys.exit(2)
 
-#----------------- append_log() ----------------#
-	def append_log(self, author, msg):
+#----------------- commit_log() ----------------#
+	def commit_log(self, author, msg, top_cmd):
+		## retain current directory before proceeding
+		self.current_dir=os.getcwd()
+
 		# check if the commit log exist
 		filepath=os.path.join(os.getcwd(), self.commit_file)
 		print filepath
@@ -133,8 +148,32 @@ class Commit(Command):
 					"Application Ended (%d)\033[0m" % (cmd, status))
 			sys.exit(2)
 
+		## run git commit
+		(out, status)=self.execBash(top_cmd)
+		print out
+
+		if status==0:
+			# commit successfully, remove the temporary file
+			self.execBash("rm -f %s.tmp" % (self.commit_file))
+		else:
+			# not commit, revert change to commit_file
+			self.execBash("rm -f %s && mv %s.tmp %s"
+					%(self.commit_file, self.commit_file, self.commit_file))
+
+		#out=self.execBash("git log -n1")[0]
+		#print("show the last commit")
+		#print out
+		## go back to where we from
+		self.execBash("git push conti_dev")
+		os.chdir(self.current_dir)
+
+
 #----------------- main() ----------------#
 	def Execute(self, options, args):
+		## testing
+		#rp = self.manifest.repoProject
+		#print "rp is %s" % rp.revisionExpr
+
 		#(options, args) = parseCmd()
 		commit_msg=""
 
@@ -200,35 +239,18 @@ class Commit(Command):
 			# get the list of files changes too
 			#files_changes=('files changes to be added:\n\033[1;32m%s\033[0m'
 			#				% self.execBash("git ls-files -m"))
-			git_status = subprocess.Popen("git status", shell=True,
-											stdout=subprocess.PIPE).stdout.read()
-			git_status='git status: \n' + git_status
+			#git_status = subprocess.Popen("git status", shell=True,
+			#								stdout=subprocess.PIPE).stdout.read()
+			#git_status='git status: \n' + git_status
+			git_status=""
 			cmd = "git commit -am '%s'" % (commit_msg_format)
 			msg_ready=("%s\ncommit message:\n%s \n%s\n%s\nReady to commit: (y/n)? "
 							#%("-"*120 ,commit_msg_format, "-"*120, files_changes))
 							%("-"*120 ,commit_msg_format, "-"*120, git_status))
 			readyToCommit=raw_input(msg_ready)
 			if "y"==readyToCommit:
-				## retain current directory before proceeding
-				self.current_dir=os.getcwd()
-				## modify the commit log to include some details
-				self.append_log(author, commit_msg_format)
-				## run git commit
-				(out, status)=self.execBash(cmd)
-				print out
-
-				if status==0:
-					# commit successfully, remove the temporary file
-					self.execBash("rm -f %s.tmp" % (self.commit_file))
-				else:
-					# not commit, revert change to commit_file
-					self.execBash("rm -f %s && mv %s.tmp %s"
-							%(self.commit_file, self.commit_file, self.commit_file))
-				#out=execBash("git log -n1")
-				#print("show the last commit")
-				#print out
-				## go back to where we from
-				os.chdir(self.current_dir)
+				## commit the log
+				self.commit_log(author, commit_msg_format, cmd)
 
 		print "End of application. Have a nice day!"
 
