@@ -21,8 +21,7 @@ from command import Command
 
 
 class Commit(Command):
-	helpSummary = """mark a task as complete and get name of anroid
-				     projects changed related to the task"""
+	helpSummary = """create commit log"""
 	helpUsage = ""
 	commit_file="commit.log"
 
@@ -83,7 +82,7 @@ class Commit(Command):
 
 		# append the details to commit log
 		log_date=self.execBash("date")[0]
-		log_msg="-"*120 + "\nAuthor: " +author+ "\nDate: " +log_date+"\n"+msg
+		log_msg="-"*120 + "\nAuthor: " +author+ "\nDate  : " +log_date+"\n"+msg
 		cmd=("mv -f %s %s.tmp && echo '%s' > %s"
 				% (self.commit_file, self.commit_file, log_msg, self.commit_file))
 		status = self.execBash(cmd)[1]
