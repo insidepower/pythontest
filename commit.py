@@ -23,7 +23,9 @@ from command import Command
 class Commit(Command):
 	helpSummary = """create commit log"""
 	helpUsage = ""
+	current_dir=""
 	commit_file="commit.log"
+	commit_dir="commitlog"
 
 #----------------- parseCmd() ----------------#
 ## parse the command line arguments
@@ -68,17 +70,35 @@ class Commit(Command):
 		# check if the commit log exist
 		filepath=os.path.join(os.getcwd(), self.commit_file)
 		print filepath
+		## check if we are at the commit_dir directory
 		if not os.path.isfile(filepath):
-			print("\033[1;31mWarning!! %s does not exist, are you in commitlog "
-					"directory?\033[0m " %(self.commit_file))
-			input=raw_input("If you are sure you are in commitlog "
-					"directory, do you want to create the %s now? (y/n) " % self.commit_file)
-			if input == 'y':
-				self.execBash("touch %s" % self.commit_file)
+			if os.path.isdir(os.path.join(os.getcwd(), self.commit_dir)):
+				## cd into commit_dir directory
+				os.chdir(self.commit_dir)
+				print("we are at...%s" % os.getcwd())
+				filepath=os.path.join(os.getcwd(), self.commit_file)
+				if not os.path.isfile(filepath):
+					print("\033[1;31mWarning!! %s does not exist in %s! "
+							"Application Ended.\033[0m " %(self.commit_file,
+								os.getcwd()))
+					os.chdir(self.current_dir)
+					sys.exit(2)
 			else:
-				print("\033[1;31m File not created."
-					"Application Ended\033[0m")
+				## commit_dir not exists, quit
+				print("\033[1;31mWarning!! Directory %s does not exist! "
+						"Application Ended.\033[0m " %(self.commit_dir))
+				os.chdir(self.current_dir)
 				sys.exit(2)
+			#print("\033[1;31mWarning!! %s does not exist, are you in commitlog "
+			#		"directory?\033[0m " %(self.commit_file))
+			#input=raw_input("If you are sure you are in commitlog "
+			#		"directory, do you want to create the %s now? (y/n) " % self.commit_file)
+			#if input == 'y':
+			#	self.execBash("touch %s" % self.commit_file)
+			#else:
+			#	print("\033[1;31m File not created."
+			#		"Application Ended\033[0m")
+			#	sys.exit(2)
 
 		# append the details to commit log
 		log_date=self.execBash("date")[0]
@@ -175,22 +195,26 @@ class Commit(Command):
 							%("-"*120 ,commit_msg_format, "-"*120, git_status))
 			readyToCommit=raw_input(msg_ready)
 			if "y"==readyToCommit:
-				# modify the commit log to include some details
+				## retain current directory before proceeding
+				self.current_dir=os.getcwd()
+				## modify the commit log to include some details
 				self.append_log(author, commit_msg_format)
-				# run git commit
+				## run git commit
 				(out, status)=self.execBash(cmd)
 				print out
 
 				if status==0:
 					# commit successfully, remove the temporary file
-					self.execBash("rm %s.tmp" % (self.commit_file))
+					self.execBash("rm -f %s.tmp" % (self.commit_file))
 				else:
 					# not commit, revert change to commit_file
-					self.execBash("rm %s && mv %s.tmp %s"
+					self.execBash("rm -f %s && mv %s.tmp %s"
 							%(self.commit_file, self.commit_file, self.commit_file))
 				#out=execBash("git log -n1")
 				#print("show the last commit")
 				#print out
+				## go back to where we from
+				os.chdir(self.current_dir)
 
 		print "End of application. Have a nice day!"
 
