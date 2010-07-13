@@ -76,13 +76,14 @@ class Commit(Command):
 					"HEAD content=<%s>. "
 					"Application Ended.\033[0m " %(self.git_current_branch))
 			sys.exit(2)
-		print ("getting update from server and merge to current branch %s..."
+		print ("\nFetching from server and merge into current branch %s..."
 				% self.git_current_branch)
 		(out, status)=self.execBash("git pull conti_dev %s" % self.git_current_branch)
 		if status != 0:
 			print out
 			print("\033[1;31mWarning!! Not able to get the update from "
-					"server! Application Ended.\033[0m ")
+					"server! Please check your connection to internet. "
+					"Application Ended.\033[0m ")
 			sys.exit(2)
 
 #----------------- commit_log() ----------------#
@@ -92,7 +93,7 @@ class Commit(Command):
 
 		# check if the commit log exist
 		filepath=os.path.join(os.getcwd(), self.commit_file)
-		print filepath
+		#print filepath
 		## check if we are at the commit_dir directory
 		if not os.path.isfile(filepath):
 			if os.path.isdir(os.path.join(os.getcwd(), self.commit_dir)):
@@ -150,7 +151,7 @@ class Commit(Command):
 
 		## run git commit
 		(out, status)=self.execBash(top_cmd)
-		print out
+		print ("\n%s" % out)
 
 		if status==0:
 			# commit successfully, remove the temporary file
@@ -178,7 +179,7 @@ class Commit(Command):
 		commit_msg=""
 
 		## set the duration for the commits to be considered
-		duration="2 hour"
+		duration="8am"
 		if options.duration:
 			duration=options.duration
 
@@ -188,7 +189,7 @@ class Commit(Command):
 		if options.author:
 			author=options.author
 
-		cmd=('repo forall -p -c git log --since="%s" --author="%s" --pretty=oneline'
+		cmd=('repo forall -p -c git log --since="%s" --author="%s" --pretty=oneline nissan_ev_dev'
 				% (duration, author))
 		if options.searchstr:
 			cmd=cmd + ' --grep="%s"' % (options.searchstr)
@@ -197,9 +198,8 @@ class Commit(Command):
 			cmd=cmd + ' %s' %(options.extra_params)
 
 		## look for sub-project which is most likely commited by user recently
-		print("recursive searching for each sub-projects for commits "
-				"since last %s from %s" %(duration, author))
-		print cmd
+		print("Search for conti_dev branch's commits since %s from %s" %(duration, author))
+		#print cmd
 		log_result=self.execBash(cmd)[0].splitlines()
 		#print log_result
 		for i, line in enumerate(log_result):
@@ -210,10 +210,10 @@ class Commit(Command):
 				for commit_id in log_result[i+1:]:
 					## check if there is anymore commit under the same project
 					if (re.match(r"[0-9a-z]{40}", commit_id)):
-						prompt_msg = ("\033[1;34madd %s: log=%s \033[0m(y/n)? "
+						prompt_msg = ("\033[1;33madd %s: log=%s \033[0m(y/n)? "
 										%(proj_name.group(1), commit_id[:120]))
 						shouldAdd=raw_input(prompt_msg)
-						if 'y' == shouldAdd:
+						if 'y' == shouldAdd.lower():
 							commit_msg += ("%s: %s\n"
 									%(proj_name.group(1), commit_id[:120]))
 							#print("commit_msg=%s" %(commit_msg))
@@ -227,13 +227,13 @@ class Commit(Command):
 		if commit_msg:
 			first_line_summary=re.match(r".*?: [0-9a-z]{40} (.*)", commit_msg)
 			#print ("match %s " %(first_line_summary.group(1)))
-			shouldUse=raw_input("\nuse line below as the 1st line "
-								"summary:\n%s (y/n)? " %first_line_summary.group(1))
-
-			if "y"==shouldUse:
+			#shouldUse=raw_input("\nuse line below as the 1st line "
+			#					"summary:\n%s (y/n)? " %first_line_summary.group(1))
+			shouldUse="n"
+			if "y"==shouldUse.lower():
 				commit_msg_format = "%s\n\n%s" %(first_line_summary.group(1), commit_msg)
 			else:
-				line1_msg=raw_input("Please input your first line summary below:\n")
+				line1_msg=raw_input("\nPlease input your first line summary below:\n")
 				commit_msg_format = "%s\n\n%s" % (line1_msg, commit_msg)
 
 			# get the list of files changes too
@@ -244,15 +244,15 @@ class Commit(Command):
 			#git_status='git status: \n' + git_status
 			git_status=""
 			cmd = "git commit -am '%s'" % (commit_msg_format)
-			msg_ready=("%s\ncommit message:\n%s \n%s\n%s\nReady to commit: (y/n)? "
+			msg_ready=("\n%s\nCommit Message:\n%s\n%s%s\n%s\nReady to commit: (y/n)? "
 							#%("-"*120 ,commit_msg_format, "-"*120, files_changes))
-							%("-"*120 ,commit_msg_format, "-"*120, git_status))
+							%("-"*120 , "-"*120 ,commit_msg_format, "-"*120, git_status))
 			readyToCommit=raw_input(msg_ready)
-			if "y"==readyToCommit:
+			if "y"==readyToCommit.lower():
 				## commit the log
 				self.commit_log(author, commit_msg_format, cmd)
 
-		print "End of application. Have a nice day!"
+		print "\n\033[1;34mrepo commit success! Have a nice day!\033[0m"
 
 #----------------- standalone() ----------------#
 ## if standalone, i.e. called directly from shell
