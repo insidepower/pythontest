@@ -27,6 +27,8 @@ class Commit(Command):
 	git_current_branch=""
 	commit_file="commit.log"
 	commit_dir="commitlog"
+	## hold added project name
+	proj_name=[]
 
 #----------------- parseCmd() ----------------#
 ## parse the command line arguments
@@ -86,6 +88,25 @@ class Commit(Command):
 					"Application Ended.\033[0m ")
 			sys.exit(2)
 
+#----------------- is_push() ----------------#
+	def is_push(self, ori_dir):
+		## recursively go into each added git project to check
+		## if the changes have been pushed to server
+		## we are at top level now, and should exit in top level too
+		#print self.proj_name, ori_dir
+		for proj in self.proj_name:
+			proj_path=os.path.join(ori_dir, proj)
+			os.chdir(proj_path)
+			out1=self.execBash("echo 'now at ' `pwd`")[0]
+			cmd = "git log conti_dev/nissan_ev_dev..nissan_ev_dev "
+			cmd = cmd +"--pretty=oneline| wc -l"
+			log_diff=int(self.execBash(cmd)[0])
+			#print out1, log_diff
+			if log_diff!=0:
+				print("\033[1;31mHave you pushed project %s to server?"
+							" Application Ended.\033[0m " %(proj))
+				sys.exit(2)
+
 #----------------- commit_log() ----------------#
 	def commit_log(self, author, msg, top_cmd):
 		## retain current directory before proceeding
@@ -97,8 +118,10 @@ class Commit(Command):
 		## check if we are at the commit_dir directory
 		if not os.path.isfile(filepath):
 			if os.path.isdir(os.path.join(os.getcwd(), self.commit_dir)):
+				## check if local changes have been pushed to server
+				self.is_push(self.current_dir)
 				## cd into commit_dir directory
-				os.chdir(self.commit_dir)
+				os.chdir(os.path.join(self.current_dir, self.commit_dir))
 				## get update from server
 				self.get_server_update()
 				filepath=os.path.join(os.getcwd(), self.commit_file)
@@ -113,10 +136,22 @@ class Commit(Command):
 			else:
 				## commit_dir not exists, quit
 				print("\033[1;31mWarning!! Directory %s does not exist! "
-						"Have you updated your manifest? "
+						"Have you updated your manifest? You need to be at "
+						"top (android) directory or inside commitlog "
+						"directory to execute 'repo commit'. "
 						"Application Ended.\033[0m " %(self.commit_dir))
 				os.chdir(self.current_dir)
 				sys.exit(2)
+		else:
+			## we are inside commitlog directory
+			## go to top directory
+			os.chdir("..")
+			out=self.execBash("echo 'we are at' `pwd`")[0]
+			print out
+			self.is_push(os.getcwd())
+			## go back to commitlog directory
+			os.chdir(self.current_dir)
+
 			#print("\033[1;31mWarning!! %s does not exist, are you in commitlog "
 			#		"directory?\033[0m " %(self.commit_file))
 			#input=raw_input("If you are sure you are in commitlog "
@@ -216,6 +251,7 @@ class Commit(Command):
 						if 'y' == shouldAdd.lower():
 							commit_msg += ("%s: %s\n"
 									%(proj_name.group(1), commit_id[:120]))
+							self.proj_name.append(proj_name.group(1))
 							#print("commit_msg=%s" %(commit_msg))
 							#print proj_name.group()
 							#print log_result[i+1]
@@ -251,6 +287,10 @@ class Commit(Command):
 			if "y"==readyToCommit.lower():
 				## commit the log
 				self.commit_log(author, commit_msg_format, cmd)
+		else:
+			print ("\n\033[1;31mNo other commits found, you may use --since to expand "
+					"the search duration.\033[0m")
+			sys.exit(2)
 
 		print "\n\033[1;34mrepo commit success! Have a nice day!\033[0m"
 
