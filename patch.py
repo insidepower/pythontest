@@ -10,17 +10,18 @@ import re
 import os
 import sys
 from optparse import OptionParser
+from command import Command
 
 #----------------- global variable ----------------#
 
 
-class Gen_Patch():
-
+class Patch(Command):
 	## remote_branch = branch in server
 	remote_branch = "nissan_ev_dev"
 	## active_branch = branch with active development
 	active_branch = "nissan_ev_wipro"
 
+	helpSummary = """generate or apply patches"""
 	cur_dir_len = 0
 	options = None
 	args = None
@@ -28,14 +29,18 @@ class Gen_Patch():
 
 #----------------- parseCmd() ----------------#
 ## parse the command line arguments
-  	def parseCmd(self):
-		parser = OptionParser()
+  	def _Options(self, parser):
+		def cmd(option, opt_str, value, parser):
+			setattr(parser.values, option.dest, list(parser.rargs))
+			while parser.rargs:
+				del parser.rargs[0]
+		#parser = OptionParser()
 		parser.add_option("-d", "--destination", dest="dest_dir",
 				help="path to destination directory to be created");
 		parser.add_option("-g", "--generate-patch", dest="is_gen_patch",
 				action="store_true", default=False,
 				help="path to destination directory to be created");
-		return parser.parse_args()  #options.filename, options.verbose..
+		#return parser.parse_args()  #options.filename, options.verbose..
 
 #----------------- execBash() ----------------#
 	def execBash(self, cmd):
@@ -65,7 +70,7 @@ class Gen_Patch():
 				print "error! return code= ", result
 
 #----------------- main() ----------------#
-	def main(self):
+	def Execute(self, options, args):
 		(self.options, self.args) = self.parseCmd()
 		if self.options.dest_dir:
 			self.dest_dir = self.options.dest_dir
@@ -73,8 +78,8 @@ class Gen_Patch():
 
 #----------------- standalone() ----------------#
 ## if standalone, i.e. called directly from shell
-if __name__ == '__main__':
-	f = Gen_Patch();
-	f.main();
-	f.gen_directory();
+#if __name__ == '__main__':
+#	f = patch();
+#	f.main();
+#	f.gen_directory();
 
