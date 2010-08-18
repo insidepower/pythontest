@@ -1,5 +1,8 @@
 #!/usr/bin/python
-# this file is to be placed at .repo/repo/subcmds/commit.py
+# --------------------------------------------------------------"
+# Copyright (C) 2010 Continental Automotive Singapore, Pte. Ltd."
+# --------------------------------------------------------------"
+# this file is to be placed at .repo/repo/subcmds/patch.py
 '''
 usage :
 '''
@@ -23,8 +26,8 @@ class Patch(Command):
 
 	helpSummary = """generate or apply patches"""
 	cur_dir_len = 0
-	options = None
-	args = None
+	#options = None
+	#args = None
 	dest_dir = ""
 
 #----------------- parseCmd() ----------------#
@@ -36,7 +39,7 @@ class Patch(Command):
 				del parser.rargs[0]
 		#parser = OptionParser()
 		parser.add_option("-d", "--destination", dest="dest_dir",
-				help="path to destination directory to be created");
+				help="absolute path to destination directory to be created");
 		parser.add_option("-g", "--generate-patch", dest="is_gen_patch",
 				action="store_true", default=False,
 				help="path to destination directory to be created");
@@ -63,18 +66,21 @@ class Patch(Command):
 		out = self.execBash("repo forall -c pwd")[0].splitlines()
 		for line in out:
 			#print line[(self.cur_dir_len):]
-			cmd = "mkdir -p %s%s" % (self.dest_dir, line[self.cur_dir_len:])
-			#print cmd
+			cmd = "mkdir -p %s/%s" % (self.dest_dir, line[self.cur_dir_len:])
+			print cmd
 			result = self.execBash(cmd)[1]
 			if result:
 				print "error! return code= ", result
 
 #----------------- main() ----------------#
 	def Execute(self, options, args):
-		(self.options, self.args) = self.parseCmd()
-		if self.options.dest_dir:
-			self.dest_dir = self.options.dest_dir
+		#(self.options, self.args) = self.parseCmd()
+
+		## generate the empty directory hierarachy according to manifest
+		if options.dest_dir:
+			self.dest_dir = options.dest_dir
 			print "destination folder = ", self.dest_dir
+			self.gen_directory();
 
 #----------------- standalone() ----------------#
 ## if standalone, i.e. called directly from shell
