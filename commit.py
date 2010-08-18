@@ -28,7 +28,7 @@ class Commit(Command):
 	commit_file="commit.log"
 	commit_dir="commitlog"
 	## hold added project name
-	proj_name=[]
+	proj_name=None
 
 #----------------- parseCmd() ----------------#
 ## parse the command line arguments

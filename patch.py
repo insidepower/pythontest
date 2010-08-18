@@ -20,15 +20,16 @@ from command import Command
 
 class Patch(Command):
 	## remote_branch = branch in server
-	remote_branch = "nissan_ev_dev"
+	remote_branch = "nissan_ev_wipro"
 	## active_branch = branch with active development
-	active_branch = "nissan_ev_wipro"
+	active_branch = "nissan_ev_wipro_dev"
 
 	helpSummary = """generate or apply patches"""
 	cur_dir_len = 0
 	#options = None
 	#args = None
 	dest_dir = ""
+	proj_name=[]
 
 #----------------- parseCmd() ----------------#
 ## parse the command line arguments
@@ -40,9 +41,12 @@ class Patch(Command):
 		#parser = OptionParser()
 		parser.add_option("-d", "--destination", dest="dest_dir",
 				help="absolute path to destination directory to be created");
+		parser.add_option("-o", "--generate-patch-only", dest="is_gen_patch_only",
+				action="store_true", default=False,
+				help="generate patch only");
 		parser.add_option("-g", "--generate-patch", dest="is_gen_patch",
 				action="store_true", default=False,
-				help="path to destination directory to be created");
+				help="generate patch and extract it to destination, then zip it");
 		#return parser.parse_args()  #options.filename, options.verbose..
 
 #----------------- execBash() ----------------#
@@ -63,14 +67,21 @@ class Patch(Command):
 	def gen_directory(self):
 		self.cur_dir_len = len(os.getcwd())+1
 		#print "cur_dir_len=",self.cur_dir_len;
-		out = self.execBash("repo forall -c pwd")[0].splitlines()
-		for line in out:
+		self.proj_name = self.execBash("repo forall -c pwd")[0].splitlines()
+		for line in self.proj_name:
 			#print line[(self.cur_dir_len):]
 			cmd = "mkdir -p %s/%s" % (self.dest_dir, line[self.cur_dir_len:])
 			print cmd
 			result = self.execBash(cmd)[1]
 			if result:
 				print "error! return code= ", result
+
+#----------------- gen_patch() ----------------#
+	def gen_patch_only(self):
+		cmd = "repo forall -p -c 'git format-patch %s..%s'" % \
+								(self.remote_branch, self.active_branch)
+		out = self.execBash(cmd)[0]
+		print out
 
 #----------------- main() ----------------#
 	def Execute(self, options, args):
@@ -81,6 +92,12 @@ class Patch(Command):
 			self.dest_dir = options.dest_dir
 			print "destination folder = ", self.dest_dir
 			self.gen_directory();
+
+		if options.is_gen_patch_only:
+			self.gen_patch_only()
+
+		#if options.is_gen_patch_only:
+		#	self.gen_patch_only()
 
 #----------------- standalone() ----------------#
 ## if standalone, i.e. called directly from shell
