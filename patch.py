@@ -25,12 +25,12 @@ class Patch(Command):
 	active_branch = "nissan_ev_wipro_dev"
 
 	helpSummary = """generate or apply patches"""
-	cur_dir_len = 0
+	top_dir = ""
 	#options = None
 	args = None
 	dest_dir = ""
 	repo_dir = ".repo"
-	proj_name=[]
+	proj_with_patch=[]
 
 #----------------- parseCmd() ----------------#
 ## parse the command line arguments
@@ -68,8 +68,9 @@ class Patch(Command):
 	def gen_directory(self, dest_dir):
 		self.dest_dir = dest_dir
 		print "destination folder = ", self.dest_dir
+
+		## check if destination directory exists
 		if os.path.isdir(self.dest_dir):
-			## destination directory exists
 			print ("\033[1;31m"
 					"Destination directory exists! Please delete the directory."
 					"\033[0m\n")
@@ -81,34 +82,61 @@ class Patch(Command):
 			else:
 				sys.exit(2)
 
+		## create each directory in destination folder
 		for project in self.GetProjects(self.args):
 			cmd = "mkdir -p %s/%s" % (self.dest_dir, project.relpath)
 			#print cmd
 			result = self.execBash(cmd)[1]
-			self.proj_name.append(project.relpath)	
+			#self.proj_name.append(project.relpath)	
 			if result:
 				print "error! return code= ", result
-		print self.proj_name
-
-#----------------- is_patch_exist() ----------------#
-	## check for if patches exit in each project, prompt to delete if exists
-	def is_patch_exist(self):
-		print "haha"
+		#print self.proj_name
 
 #----------------- gen_patch_only() ----------------#
 	## generate pathes only
 	def gen_patch_only(self):
-		self.is_patch_exist()
-		cmd = "repo forall -c 'echo && echo -n [project]: && pwd && " \
-			  "git format-patch %s..%s'" % (self.remote_branch, self.active_branch)
-		out = self.execBash(cmd, True)[0]
-		print out
+		print ""
+		for project in self.GetProjects(self.args):
+			os.chdir(project.relpath)
+			print "[project]:", project.relpath
+			out = self.execBash("ls *.patch &2>/dev/null", True)[0]
+			if out:
+				print ("\033[1;31m"
+					"Patches exists! Please delete before proceed."
+					"\033[0m")
+				should_delete = raw_input("delete the patches now? (y/n) ")
+				if 'y' == should_delete.lower():
+					result = self.execBash("rm -f *.patch")[1]
+					if result:
+						sys.exit(2)
+				else:
+					sys.exit(2)
+					
+			#print "result", out
+			out = self.execBash("git format-patch %s..%s" % 
+					(self.remote_branch, self.active_branch))[0]
+			print out
+			self.proj_with_patch.append(project.relpath)	
+			os.chdir(self.top_dir)
+			#cmd = "repo forall -c 'echo && echo -n [project]: && pwd && " \
+			#	  "git format-patch %s..%s'" % (self.remote_branch, self.active_branch)
+			#out = self.execBash(cmd, True)[0]
+
+#----------------- copy_patch() ----------------#
+	## generate pathes only
+	def copy_patch(self):
+		for project in self.proj_with_patch:
+			cmd = "cp -r %s/*.patch %s/%s" % (project, self.dest_dir, project)
+			out = self.execBash(cmd)[1]
+			if out:
+				sys.exit(2)
 
 #----------------- gen_patch() ----------------#
 	## generate patch and copy to destination folder then zip it
 	def gen_patch(self, dest_dir):
 		self.gen_directory(dest_dir)
 		self.gen_patch_only()
+		self.copy_patch()
 
 #----------------- main() ----------------#
 	def Execute(self, options, args):
@@ -116,6 +144,7 @@ class Patch(Command):
 		self.args = args
 
 		if os.path.isdir(os.path.join(os.getcwd(), self.repo_dir)):
+			self.top_dir = os.getcwd()
 
 			## generate patch and copy to destination folder then zip it
 			if options.is_gen_patch:
