@@ -144,7 +144,7 @@ class Patch(Command):
 #----------------- zip_patch() ----------------#
 	## zipping the patch destination directory
 	def zip_patch(self):
-		cmd = "tar -czvPf patch-%s.tar.gz %s" % (date.today(), self.dest_dir)
+		cmd = "tar -czvf patch-%s.tar.gz -C %s */" % (date.today(), self.dest_dir)
 		print cmd
 		out = self.execBash(cmd)
 
