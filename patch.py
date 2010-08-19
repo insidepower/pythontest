@@ -165,9 +165,10 @@ class Patch(Command):
 		patch_file = os.path.join(self.tar_target_dir, self.patch_log)
 		f = open(patch_file, "r")
 		for line in f:
-			print line
+			#print line
 			proj_name=re.match(r"[project]: (.*)/", line)
 			if proj_name:
+				print proj_name
 				print proj_name.group(0)
 		f.close()
 
