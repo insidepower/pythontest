@@ -147,7 +147,7 @@ class Patch(Command):
 	def untar_patch(self, target):
 		os.chdir(self.top_dir)
 		self.tar_target = target
-		self.tar_target_dir = target[:-7]
+		self.tar_target_dir = re.match(r"(.*).tar.gz", target).group(1)
 		if os.path.isdir(self.tar_target_dir):
 			print "%s exists, deleting it" % (self.tar_target_dir)
 			self.execBash("rm -rf %s" % self.tar_target_dir)
@@ -162,14 +162,14 @@ class Patch(Command):
 #----------------- apply_patch() ----------------#
 	## generate patch and copy to destination folder then zip it
 	def apply_patch(self):
+		os.chdir(self.top_dir)
 		patch_file = os.path.join(self.tar_target_dir, self.patch_log)
 		f = open(patch_file, "r")
 		for line in f:
 			#print line
-			proj_name=re.match(r"[project]: (.*)/", line)
+			proj_name=re.match(r"\[project\]: (.*)", line)
 			if proj_name:
-				print proj_name
-				print proj_name.group(0)
+				print proj_name.group(1)
 		f.close()
 
 #----------------- gen_patch_dir() ----------------#
