@@ -27,7 +27,7 @@ class Patch(Command):
 	helpSummary = """generate or apply patches"""
 	cur_dir_len = 0
 	#options = None
-	#args = None
+	args = None
 	dest_dir = ""
 	repo_dir = ".repo"
 	proj_name=[]
@@ -81,19 +81,13 @@ class Patch(Command):
 			else:
 				sys.exit(2)
 
-		self.cur_dir_len = len(os.getcwd())+1
-		#print "cur_dir_len=",self.cur_dir_len;
-		out = self.execBash("repo forall -p -c echo")[0].splitlines()
-		for line in out:
-			#print line
-			proj_name=re.match(r"project (.*)/", line)
-			if proj_name:
-				self.proj_name.append(proj_name.group(1))
-				cmd = "mkdir -p %s/%s" % (self.dest_dir, proj_name.group(1))
-				print cmd
-				result = self.execBash(cmd)[1]
-				if result:
-					print "error! return code= ", result
+		for project in self.GetProjects(self.args):
+			cmd = "mkdir -p %s/%s" % (self.dest_dir, project.relpath)
+			#print cmd
+			result = self.execBash(cmd)[1]
+			if result:
+				print "error! return code= ", result
+		#print self.proj_name
 
 #----------------- is_patch_exist() ----------------#
 	## check for if patches exit in each project, prompt to delete if exists
@@ -118,6 +112,7 @@ class Patch(Command):
 #----------------- main() ----------------#
 	def Execute(self, options, args):
 		#(self.options, self.args) = self.parseCmd()
+		self.args = args
 
 		if os.path.isdir(os.path.join(os.getcwd(), self.repo_dir)):
 
