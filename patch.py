@@ -51,13 +51,13 @@ class Patch(Command):
 		#return parser.parse_args()  #options.filename, options.verbose..
 
 #----------------- execBash() ----------------#
-	def execBash(self, cmd):
+	def execBash(self, cmd, is_suppress=False):
 		#print cmd
 		p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
 		#(stdoutdata, stderrdata) = p.communicate()
 		stdoutdata = p.communicate()[0]
 		p.poll()
-		if p.returncode != 0:
+		if (p.returncode != 0) and (not is_suppress):
 			print ("\033[1;31mWarning!! command (%s) not ended properly."
 					"exit status = %d\033[0m" %(cmd, p.returncode))
 		#out = p.stdout.read()
@@ -73,24 +73,30 @@ class Patch(Command):
 			print ("\033[1;31m"
 					"Destination directory exists! Please delete the directory."
 					"\033[0m\n")
-			sys.exit(2)
-		else:
-			self.cur_dir_len = len(os.getcwd())+1
-			#print "cur_dir_len=",self.cur_dir_len;
-			self.proj_name = self.execBash("repo forall -c pwd")[0].splitlines()
-			for line in self.proj_name:
-				#print line[(self.cur_dir_len):]
-				cmd = "mkdir -p %s/%s" % (self.dest_dir, line[self.cur_dir_len:])
-				#print cmd
-				result = self.execBash(cmd)[1]
-				if result:
-					print "error! return code= ", result
+			should_delete = raw_input("delete the directory now? (y/n) ")
+			if 'y' == should_delete.lower():
+				out = self.execBash('rm -rf %s' % self.dest_dir)[1]
+				if out:
+					sys.exit(2)
+			else:
+				sys.exit(2)
+
+		self.cur_dir_len = len(os.getcwd())+1
+		#print "cur_dir_len=",self.cur_dir_len;
+		self.proj_name = self.execBash("repo forall -c pwd")[0].splitlines()
+		for line in self.proj_name:
+			#print line[(self.cur_dir_len):]
+			cmd = "mkdir -p %s/%s" % (self.dest_dir, line[self.cur_dir_len:])
+			#print cmd
+			result = self.execBash(cmd)[1]
+			if result:
+				print "error! return code= ", result
 
 #----------------- gen_patch_only() ----------------#
 	def gen_patch_only(self):
 		cmd = "repo forall -c 'echo && pwd && git format-patch %s..%s'" % \
 								(self.remote_branch, self.active_branch)
-		out = self.execBash(cmd)[0]
+		out = self.execBash(cmd, True)[0]
 		print out
 
 #----------------- gen_patch_only() ----------------#
