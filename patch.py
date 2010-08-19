@@ -83,23 +83,34 @@ class Patch(Command):
 
 		self.cur_dir_len = len(os.getcwd())+1
 		#print "cur_dir_len=",self.cur_dir_len;
-		self.proj_name = self.execBash("repo forall -c pwd")[0].splitlines()
-		for line in self.proj_name:
-			#print line[(self.cur_dir_len):]
-			cmd = "mkdir -p %s/%s" % (self.dest_dir, line[self.cur_dir_len:])
-			#print cmd
-			result = self.execBash(cmd)[1]
-			if result:
-				print "error! return code= ", result
+		out = self.execBash("repo forall -p -c echo")[0].splitlines()
+		for line in out:
+			#print line
+			proj_name=re.match(r"project (.*)/", line)
+			if proj_name:
+				self.proj_name.append(proj_name.group(1))
+				cmd = "mkdir -p %s/%s" % (self.dest_dir, proj_name.group(1))
+				print cmd
+				result = self.execBash(cmd)[1]
+				if result:
+					print "error! return code= ", result
+
+#----------------- is_patch_exist() ----------------#
+	## check for if patches exit in each project, prompt to delete if exists
+	def is_patch_exist(self):
+		print "haha"
 
 #----------------- gen_patch_only() ----------------#
+	## generate pathes only
 	def gen_patch_only(self):
-		cmd = "repo forall -c 'echo && pwd && git format-patch %s..%s'" % \
-								(self.remote_branch, self.active_branch)
+		self.is_patch_exist()
+		cmd = "repo forall -c 'echo && echo -n [project]: && pwd && " \
+			  "git format-patch %s..%s'" % (self.remote_branch, self.active_branch)
 		out = self.execBash(cmd, True)[0]
 		print out
 
-#----------------- gen_patch_only() ----------------#
+#----------------- gen_patch() ----------------#
+	## generate patch and copy to destination folder then zip it
 	def gen_patch(self, dest_dir):
 		self.gen_directory(dest_dir)
 		self.gen_patch_only()
@@ -125,6 +136,7 @@ class Patch(Command):
 			if options.dest_dir:
 				self.gen_directory(options.dest_dir);
 
+			## generate pathes only
 			if options.is_gen_patch_only:
 				self.gen_patch_only()
 
