@@ -49,8 +49,6 @@ class Patch(Command):
 			while parser.rargs:
 				del parser.rargs[0]
 		#parser = OptionParser()
-		parser.add_option("-d", "--destination", dest="dest_dir",
-				help="absolute path to destination directory to be created");
 		parser.add_option("-o", "--generate-patch-only", dest="is_gen_patch_only",
 				action="store_true", default=False,
 				help="generate patch only");
@@ -59,6 +57,10 @@ class Patch(Command):
 				help="generate patch and extract it to destination, then zip it");
 		parser.add_option("-p", "--apply-patch", dest="untar_patch",
 				help="apply patches to current directory");
+		parser.add_option("-s", "--server-branch", dest="remote_branch",
+				help="indicate the remote branch, default is nissan_ev_wipro");
+		parser.add_option("-a", "--active-branch", dest="active_branch",
+				help="indicate the active development branch, default is nissan_ev_wipro_dev");
 		#return parser.parse_args()  #options.filename, options.verbose..
 
 #----------------- execBash() ----------------#
@@ -203,6 +205,12 @@ class Patch(Command):
 		## check if we are at the top directory
 		if os.path.isdir(os.path.join(os.getcwd(), self.repo_dir)):
 			self.top_dir = os.getcwd()
+
+			if options.remote_branch:
+				self.remote_branch = options.remote_branch
+
+			if options.active_branch:
+				self.active_branch = options.active_branch
 
 			## generate patch and copy to destination folder then zip it
 			if options.is_gen_patch:
