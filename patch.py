@@ -137,7 +137,7 @@ class Patch(Command):
 		if os.path.isfile(os.path.join(self.top_dir, patch_name)):
 			#print ('deleting exsiting %s' % patch_name)
 			os.remove(patch_name)
-			sys.exit(2)
+			#sys.exit(2)
 		cmd = "tar -czvf %s %s" % (patch_name, self.dest_dir)
 		print cmd
 		out = self.execBash(cmd)
