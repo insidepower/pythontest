@@ -35,6 +35,9 @@ class Patch(Command):
 	proj_with_patch=[]
 	tar_target=""
 	out_log=""
+	patch_log = "patches-summary.txt"
+	project_deco = "[project]: "
+	tar_target_dir = ""
 
 #----------------- parseCmd() ----------------#
 ## parse the command line arguments
@@ -104,8 +107,8 @@ class Patch(Command):
 		print "\n...generating patches..."
 		for project in self.GetProjects(self.args):
 			os.chdir(os.path.join(self.top_dir, project.relpath))
-			title = "[project]: %s" % project.relpath
-			print title			
+			title = "%s%s" % (self.project_deco, project.relpath)
+			print title
 			#out = self.execBash("ls *.patch &2>/dev/null", True)[0]
 			#print glob("*.patch")
 			if len(glob("*.patch")):
@@ -138,9 +141,9 @@ class Patch(Command):
 #----------------- copy_patch() ----------------#
 	## generate pathes only
 	def copy_patch(self):
-		log_name = "%s/patches-summary.txt" % self.dest_dir
+		log_name = "%s/%s" % (self.dest_dir, self.patch_log)
 		f = open(log_name, "w")
-		f.write(self.out_log)
+		#f.write(self.out_log)
 		f.close()
 		print "\n...copying and zipping patches..."
 		for project in self.proj_with_patch:
@@ -166,7 +169,10 @@ class Patch(Command):
 	## zipping the patch destination directory
 	def untar_patch(self, target):
 		self.tar_target = target
-		cmd = "tar -xzvf %s" % (target)
+		self.tar_target_dir = target[:-7]
+		print "my tar_target_dir=", self.tar_target_dir
+		os.mkdir(self.tar_target_dir)
+		cmd = "tar -xzvf %s -C %s" % (target, self.tar_target_dir)
 		print cmd
 		out = self.execBash(cmd)
 		should_apply = raw_input('Proceed to apply pathes? (y/n) ')
@@ -176,8 +182,13 @@ class Patch(Command):
 #----------------- apply_patch() ----------------#
 	## generate patch and copy to destination folder then zip it
 	def apply_patch(self):
-		#for project in self.proj_with_patch:
-		print 'haha'
+		patch_file = os.path.join(self.tar_target_dir, self.patch_log)
+		f = open(patch_file, "r")
+		for line in f:
+			proj_name=re.match(r"%s(.*)/" % self.project_deco, line)
+			if proj_name:
+				print proj_name.group(1)
+		f.close()
 
 #----------------- gen_patch() ----------------#
 	## generate patch and copy to destination folder then zip it
