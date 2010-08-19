@@ -103,7 +103,7 @@ class Patch(Command):
 								(self.remote_branch, self.active_branch, 
 									self.dest_full_dir, project.relpath))
 
-			if not bad_exit:
+			if out:
 				print out
 				self.out_log += title + '\n' + out + '\n'
 				self.proj_with_patch.append(project.relpath)	
@@ -145,11 +145,14 @@ class Patch(Command):
 #----------------- untar_patch() ----------------#
 	## zipping the patch destination directory
 	def untar_patch(self, target):
+		os.chdir(self.top_dir)
 		self.tar_target = target
 		self.tar_target_dir = target[:-7]
+		if os.path.isdir(self.tar_target_dir):
+			print "%s exists, deleting it" % (self.tar_target_dir)
+			self.execBash("rm -rf %s" % self.tar_target_dir)
 		print "my tar_target_dir=", self.tar_target_dir
-		os.mkdir(self.tar_target_dir)
-		cmd = "tar -xzvf %s -C %s" % (target, self.tar_target_dir)
+		cmd = "tar -xzvf %s" % (target)
 		print cmd
 		out = self.execBash(cmd)
 		should_apply = raw_input('Proceed to apply pathes? (y/n) ')
@@ -162,9 +165,10 @@ class Patch(Command):
 		patch_file = os.path.join(self.tar_target_dir, self.patch_log)
 		f = open(patch_file, "r")
 		for line in f:
-			proj_name=re.match(r"%s(.*)/" % self.project_deco, line)
+			print line
+			proj_name=re.match(r"[project]: (.*)/", line)
 			if proj_name:
-				print proj_name.group(1)
+				print proj_name.group(0)
 		f.close()
 
 #----------------- gen_patch_dir() ----------------#
@@ -199,11 +203,12 @@ class Patch(Command):
 				self.gen_patch_only()
 				self.log_patch_summary()
 				self.zip_patch()
-				#self.execBash("rm -rf %s" % self.dest_full_dir)
+				self.execBash("rm -rf %s" % self.dest_full_dir)
 				sys.exit(0)
 
 			## generate pathes only
 			if options.is_gen_patch_only:
+				self.gen_patch_dir()
 				self.gen_patch_only()
 
 			## untar patches
