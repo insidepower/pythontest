@@ -111,6 +111,18 @@ class Patch(Command):
 			#out = self.execBash(cmd, True)[0]
 		os.chdir(self.top_dir)
 
+#----------------- log_patch_summary() ----------------#
+	## storing the patch summary
+	def log_patch_summary(self):
+		log_name = "%s/%s" % (self.dest_full_dir, self.patch_log)
+		f = open(log_name, "w")
+		f.write('-'*25+'\n')
+		f.write('Date: %s\n' % date.today())
+		f.write('Creator: \n')
+		f.write('-'*25+'\n')
+		f.write(self.out_log)
+		f.close()
+
 #----------------- zip_patch() ----------------#
 	## zipping the patch destination directory
 	def zip_patch(self):
@@ -149,12 +161,6 @@ class Patch(Command):
 				print proj_name.group(1)
 		f.close()
 
-#----------------- gen_patch() ----------------#
-	## generate patch and copy to destination folder then zip it
-	def gen_patch(self):
-		self.gen_patch_only()
-		self.zip_patch()
-
 #----------------- gen_patch_dir() ----------------#
 	## generate patch directory
 	def gen_patch_dir(self):
@@ -184,7 +190,9 @@ class Patch(Command):
 			## generate patch and copy to destination folder then zip it
 			if options.is_gen_patch:
 				self.gen_patch_dir()
-				self.gen_patch()
+				self.gen_patch_only()
+				self.log_patch_summary()
+				self.zip_patch()
 				#self.execBash("rm -rf %s" % self.dest_full_dir)
 				sys.exit(0)
 
