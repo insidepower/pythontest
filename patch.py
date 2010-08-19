@@ -162,6 +162,7 @@ class Patch(Command):
 #----------------- apply_patch() ----------------#
 	## generate patch and copy to destination folder then zip it
 	def apply_patch(self):
+		print "\n...applying patches..."
 		os.chdir(self.top_dir)
 		patch_file = os.path.join(self.tar_target_dir, self.patch_log)
 		f = open(patch_file, "r")
@@ -171,7 +172,7 @@ class Patch(Command):
 			if proj_name:
 				proj = proj_name.group(1)
 				os.chdir(os.path.join(self.top_dir, proj))
-				cmd = "git am --3way %s/%s/%s/00*" % \
+				cmd = "git am --3way %s/%s/%s/*.patch" % \
 						(self.top_dir, self.tar_target_dir, proj)
 				print "%s: %s" % (proj, cmd)
 				self.execBash(cmd)
