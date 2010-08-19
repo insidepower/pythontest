@@ -26,7 +26,12 @@ class Patch(Command):
 	## active_branch = branch with active development
 	active_branch = "nissan_ev_wipro_dev"
 
-	helpSummary = """generate or apply patches"""
+	helpSummary = """generate or apply patches \n
+					 Example Usage:\n
+				     repo patch -g\n
+					 repo patch -g -s my_remote_branch -a my_active_branch\n
+					 repo patch -p xxx.tar.gz
+				  """
 	top_dir = ""
 	#options = None
 	args = None
@@ -48,7 +53,7 @@ class Patch(Command):
 			setattr(parser.values, option.dest, list(parser.rargs))
 			while parser.rargs:
 				del parser.rargs[0]
-		#parser = OptionParser()
+		#parser = OptionParser(usage=usage_str)
 		parser.add_option("-o", "--generate-patch-only", dest="is_gen_patch_only",
 				action="store_true", default=False,
 				help="generate patch only");
@@ -82,6 +87,7 @@ class Patch(Command):
 	def gen_patch_only(self):
 		print "\n...generating patches..."
 		for project in self.GetProjects(self.args):
+			self.execBash("mkdir -p %s/%s" % (self.dest_full_dir, project.relpath))
 			os.chdir(os.path.join(self.top_dir, project.relpath))
 			title = "%s%s" % (self.project_deco, project.relpath)
 			print title
@@ -101,9 +107,10 @@ class Patch(Command):
 			#		sys.exit(2)
 
 			#print "result", out
-			out, bad_exit = self.execBash("git format-patch %s..%s -o %s/%s" % 
-								(self.remote_branch, self.active_branch, 
-									self.dest_full_dir, project.relpath))
+			cmd = "git format-patch %s..%s -o %s/%s" % (self.remote_branch, \
+					self.active_branch, self.dest_full_dir, project.relpath)
+			print cmd
+			out, bad_exit = self.execBash(cmd, True)
 
 			if out:
 				print out
