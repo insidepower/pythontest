@@ -65,7 +65,9 @@ class Patch(Command):
 		return (stdoutdata, p.returncode)
 
 #----------------- gen_directory() ----------------#
-	def gen_directory(self):
+	def gen_directory(self, dest_dir):
+		self.dest_dir = dest_dir
+		print "destination folder = ", self.dest_dir
 		if os.path.isdir(self.dest_dir):
 			## destination directory exists
 			print ("\033[1;31m"
@@ -86,14 +88,14 @@ class Patch(Command):
 
 #----------------- gen_patch_only() ----------------#
 	def gen_patch_only(self):
-		cmd = "repo forall -p -c 'git format-patch %s..%s'" % \
+		cmd = "repo forall -c 'echo && pwd && git format-patch %s..%s'" % \
 								(self.remote_branch, self.active_branch)
 		out = self.execBash(cmd)[0]
 		print out
 
 #----------------- gen_patch_only() ----------------#
-	def gen_patch(self):
-		self.gen_directory()
+	def gen_patch(self, dest_dir):
+		self.gen_directory(dest_dir)
 		self.gen_patch_only()
 
 #----------------- main() ----------------#
@@ -101,22 +103,25 @@ class Patch(Command):
 		#(self.options, self.args) = self.parseCmd()
 
 		if os.path.isdir(os.path.join(os.getcwd(), self.repo_dir)):
-			## generate the empty directory hierarachy according to manifest
-			if options.dest_dir:
-				self.dest_dir = options.dest_dir
-				print "destination folder = ", self.dest_dir
-				self.gen_directory();
 
-			if options.is_gen_patch_only:
-				self.gen_patch_only()
-
+			## generate patch and copy to destination folder then zip it
 			if options.is_gen_patch:
 				if options.dest_dir:
-					self.gen_patch()
+					self.gen_patch(options.dest_dir)
+					sys.exit(0)
 				else:
 					print ("\033[1;31mPlease provide absolute path destination "
 							"directory\n e.g.: $ repo patch -g -d "
 							"~/home/user/nissan-patches \033[0m\n")
+					sys.exit(2)
+
+			## generate the empty directory hierarachy according to manifest
+			if options.dest_dir:
+				self.gen_directory(options.dest_dir);
+
+			if options.is_gen_patch_only:
+				self.gen_patch_only()
+
 		else:
 			print ("\033[1;31mPlease execute this command at top project "
 					"directory where .repo folder exists \033[0m\n")
