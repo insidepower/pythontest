@@ -73,34 +73,6 @@ class Patch(Command):
 		#print out
 		return (stdoutdata, p.returncode)
 
-#----------------- gen_directory() ----------------#
-	def gen_directory(self, dest_dir):
-		self.dest_dir = dest_dir
-		print "destination folder = ", self.dest_dir
-
-		## check if destination directory exists
-		if os.path.isdir(self.dest_dir):
-			print ("\033[1;31m"
-					"Destination directory exists! Please delete the directory."
-					"\033[0m")
-			should_delete = raw_input("delete the directory now? (y/n) ")
-			if 'y' == should_delete.lower():
-				out = self.execBash('rm -rf %s' % self.dest_dir)[1]
-				if out:
-					sys.exit(2)
-			else:
-				sys.exit(2)
-
-		## create each directory in destination folder
-		for project in self.GetProjects(self.args):
-			cmd = "mkdir -p %s/%s" % (self.dest_dir, project.relpath)
-			#print cmd
-			result = self.execBash(cmd)[1]
-			#self.proj_name.append(project.relpath)	
-			if result:
-				print "error! return code= ", result
-		#print self.proj_name
-
 #----------------- gen_patch_only() ----------------#
 	## generate pathes only
 	def gen_patch_only(self):
@@ -111,22 +83,23 @@ class Patch(Command):
 			print title
 			#out = self.execBash("ls *.patch &2>/dev/null", True)[0]
 			#print glob("*.patch")
-			if len(glob("*.patch")):
-			#if out:
-				print ("\033[1;31m"
-					"Patches exists! Please delete before proceed."
-					"\033[0m")
-				should_delete = raw_input("delete the patches now? (y/n) ")
-				if 'y' == should_delete.lower():
-					result = self.execBash("rm -f *.patch")[1]
-					if result:
-						sys.exit(2)
-				else:
-					sys.exit(2)
+			#if len(glob("*.patch")):
+			##if out:
+			#	print ("\033[1;31m"
+			#		"Patches exists! Please delete before proceed."
+			#		"\033[0m")
+			#	should_delete = raw_input("delete the patches now? (y/n) ")
+			#	if 'y' == should_delete.lower():
+			#		result = self.execBash("rm -f *.patch")[1]
+			#		if result:
+			#			sys.exit(2)
+			#	else:
+			#		sys.exit(2)
 
 			#print "result", out
-			out, bad_exit = self.execBash("git format-patch %s..%s" % 
-					(self.remote_branch, self.active_branch))
+			out, bad_exit = self.execBash("git format-patch %s..%s -o %s/%s" % 
+								(self.remote_branch, self.active_branch, 
+									self.dest_full_dir, project.relpath))
 
 			if not bad_exit:
 				print out
@@ -138,30 +111,16 @@ class Patch(Command):
 			#out = self.execBash(cmd, True)[0]
 		os.chdir(self.top_dir)
 
-#----------------- copy_patch() ----------------#
-	## generate pathes only
-	def copy_patch(self):
-		log_name = "%s/%s" % (self.dest_dir, self.patch_log)
-		f = open(log_name, "w")
-		#f.write(self.out_log)
-		f.close()
-		print "\n...copying and zipping patches..."
-		for project in self.proj_with_patch:
-			cmd = "mv %s/%s/*.patch %s/%s" %  \
-					(self.top_dir, project, self.dest_dir, project)
-			print cmd
-			out = self.execBash(cmd)[1]
-			if out:
-				sys.exit(2)
-
 #----------------- zip_patch() ----------------#
 	## zipping the patch destination directory
 	def zip_patch(self):
+		os.chdir(self.top_dir)
 		patch_name = "patch-%s.tar.gz" % date.today()
 		if os.path.isfile(os.path.join(self.top_dir, patch_name)):
-			print ('deleting exsiting %s' % patch_name)
-			self.execBash('rm -f %s' % patch_name)
-		cmd = "tar -czvf %s -C %s */" % (patch_name, self.dest_dir)
+			#print ('deleting exsiting %s' % patch_name)
+			os.remove(patch_name)
+			sys.exit(2)
+		cmd = "tar -czvf %s %s" % (patch_name, self.dest_dir)
 		print cmd
 		out = self.execBash(cmd)
 
@@ -192,34 +151,42 @@ class Patch(Command):
 
 #----------------- gen_patch() ----------------#
 	## generate patch and copy to destination folder then zip it
-	def gen_patch(self, dest_dir):
-		self.gen_directory(dest_dir)
+	def gen_patch(self):
 		self.gen_patch_only()
-		self.copy_patch()
 		self.zip_patch()
+
+#----------------- gen_patch_dir() ----------------#
+	## generate patch directory
+	def gen_patch_dir(self):
+		self.dest_dir = "patch-%s" % date.today()
+		self.dest_full_dir = os.path.join(self.top_dir, self.dest_dir)
+		if os.path.isdir(self.dest_full_dir):
+			print ("\033[1;31m"
+					"patch directory %s exists "
+					"\033[0m" % self.dest_dir)
+			should_delete = raw_input('delete patch directory %s? (y/n) ' 
+					% self.dest_dir)
+			if 'y' == should_delete.lower():
+				self.execBash("rm -rf %s" % self.dest_full_dir)
+			else:
+				sys.exit(2)
+		os.mkdir(self.dest_full_dir)
 
 #----------------- main() ----------------#
 	def Execute(self, options, args):
 		#(self.options, self.args) = self.parseCmd()
 		self.args = args
 
+		## check if we are at the top directory
 		if os.path.isdir(os.path.join(os.getcwd(), self.repo_dir)):
 			self.top_dir = os.getcwd()
 
 			## generate patch and copy to destination folder then zip it
 			if options.is_gen_patch:
-				if options.dest_dir:
-					self.gen_patch(options.dest_dir)
-					sys.exit(0)
-				else:
-					print ("\033[1;31mPlease provide absolute path destination "
-							"directory\n e.g.: $ repo patch -g -d "
-							"~/home/user/nissan-patches \033[0m\n")
-					sys.exit(2)
-
-			## generate the empty directory hierarachy according to manifest
-			if options.dest_dir:
-				self.gen_directory(options.dest_dir);
+				self.gen_patch_dir()
+				self.gen_patch()
+				#self.execBash("rm -rf %s" % self.dest_full_dir)
+				sys.exit(0)
 
 			## generate pathes only
 			if options.is_gen_patch_only:
