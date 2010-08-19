@@ -38,6 +38,8 @@ class Patch(Command):
 	patch_log = "patches-summary.txt"
 	project_deco = "[project]: "
 	tar_target_dir = ""
+	creator=""
+	email=""
 
 #----------------- parseCmd() ----------------#
 ## parse the command line arguments
@@ -114,12 +116,16 @@ class Patch(Command):
 #----------------- log_patch_summary() ----------------#
 	## storing the patch summary
 	def log_patch_summary(self):
+		self.creator = self.execBash("git config --list "
+										"| sed -n 's/user.name=//gp'")[0][:-1]
+		self.email = self.execBash("git config --list "
+										"| sed -n 's/user.email=//gp'")[0][:-1]
 		log_name = "%s/%s" % (self.dest_full_dir, self.patch_log)
 		f = open(log_name, "w")
-		f.write('-'*25+'\n')
+		f.write('-'*80+'\n')
 		f.write('Date: %s\n' % date.today())
-		f.write('Creator: \n')
-		f.write('-'*25+'\n')
+		f.write('Creator: %s(%s)\n' % (self.creator, self.email))
+		f.write('-'*80+'\n')
 		f.write(self.out_log)
 		f.close()
 
