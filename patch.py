@@ -33,6 +33,8 @@ class Patch(Command):
 	dest_dir = ""
 	repo_dir = ".repo"
 	proj_with_patch=[]
+	tar_target=""
+	out_log=""
 
 #----------------- parseCmd() ----------------#
 ## parse the command line arguments
@@ -50,6 +52,8 @@ class Patch(Command):
 		parser.add_option("-g", "--generate-patch", dest="is_gen_patch",
 				action="store_true", default=False,
 				help="generate patch and extract it to destination, then zip it");
+		parser.add_option("-p", "--apply-patch", dest="untar_patch",
+				help="apply patches to current directory");
 		#return parser.parse_args()  #options.filename, options.verbose..
 
 #----------------- execBash() ----------------#
@@ -100,7 +104,8 @@ class Patch(Command):
 		print "\n...generating patches..."
 		for project in self.GetProjects(self.args):
 			os.chdir(os.path.join(self.top_dir, project.relpath))
-			print "[project]:", project.relpath
+			title = "[project]: %s" % project.relpath
+			print title			
 			#out = self.execBash("ls *.patch &2>/dev/null", True)[0]
 			#print glob("*.patch")
 			if len(glob("*.patch")):
@@ -122,6 +127,7 @@ class Patch(Command):
 
 			if not bad_exit:
 				print out
+				self.out_log += title + '\n' + out + '\n'
 				self.proj_with_patch.append(project.relpath)	
 			#print self.proj_with_patch
 			#cmd = "repo forall -c 'echo && echo -n [project]: && pwd && " \
@@ -132,9 +138,13 @@ class Patch(Command):
 #----------------- copy_patch() ----------------#
 	## generate pathes only
 	def copy_patch(self):
+		log_name = "%s/patches-summary.txt" % self.dest_dir
+		f = open(log_name, "w")
+		f.write(self.out_log)
+		f.close()
 		print "\n...copying and zipping patches..."
 		for project in self.proj_with_patch:
-			cmd = "cp -r %s/%s/*.patch %s/%s" %  \
+			cmd = "mv %s/%s/*.patch %s/%s" %  \
 					(self.top_dir, project, self.dest_dir, project)
 			print cmd
 			out = self.execBash(cmd)[1]
@@ -144,9 +154,30 @@ class Patch(Command):
 #----------------- zip_patch() ----------------#
 	## zipping the patch destination directory
 	def zip_patch(self):
-		cmd = "tar -czvf patch-%s.tar.gz -C %s */" % (date.today(), self.dest_dir)
+		patch_name = "patch-%s.tar.gz" % date.today()
+		if os.path.isfile(os.path.join(self.top_dir, patch_name)):
+			print ('deleting exsiting %s' % patch_name)
+			self.execBash('rm -f %s' % patch_name)
+		cmd = "tar -czvf %s -C %s */" % (patch_name, self.dest_dir)
 		print cmd
 		out = self.execBash(cmd)
+
+#----------------- untar_patch() ----------------#
+	## zipping the patch destination directory
+	def untar_patch(self, target):
+		self.tar_target = target
+		cmd = "tar -xzvf %s" % (target)
+		print cmd
+		out = self.execBash(cmd)
+		should_apply = raw_input('Proceed to apply pathes? (y/n) ')
+		if 'y' == should_apply.lower():
+			self.apply_patch()
+
+#----------------- apply_patch() ----------------#
+	## generate patch and copy to destination folder then zip it
+	def apply_patch(self):
+		#for project in self.proj_with_patch:
+		print 'haha'
 
 #----------------- gen_patch() ----------------#
 	## generate patch and copy to destination folder then zip it
@@ -182,6 +213,10 @@ class Patch(Command):
 			## generate pathes only
 			if options.is_gen_patch_only:
 				self.gen_patch_only()
+
+			## untar patches
+			if options.untar_patch:
+				self.untar_patch(options.untar_patch)
 
 		else:
 			print ("\033[1;31mPlease execute this command at top project "
