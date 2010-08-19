@@ -85,9 +85,10 @@ class Patch(Command):
 			cmd = "mkdir -p %s/%s" % (self.dest_dir, project.relpath)
 			#print cmd
 			result = self.execBash(cmd)[1]
+			self.proj_name.append(project.relpath)	
 			if result:
 				print "error! return code= ", result
-		#print self.proj_name
+		print self.proj_name
 
 #----------------- is_patch_exist() ----------------#
 	## check for if patches exit in each project, prompt to delete if exists
