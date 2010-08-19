@@ -169,7 +169,12 @@ class Patch(Command):
 			#print line
 			proj_name=re.match(r"\[project\]: (.*)", line)
 			if proj_name:
-				print proj_name.group(1)
+				proj = proj_name.group(1)
+				os.chdir(os.path.join(self.top_dir, proj))
+				cmd = "git am --3way %s/%s/%s/00*" % \
+						(self.top_dir, self.tar_target_dir, proj)
+				print "%s: %s" % (proj, cmd)
+				self.execBash(cmd)
 		f.close()
 
 #----------------- gen_patch_dir() ----------------#
