@@ -14,6 +14,8 @@ import os
 import sys
 from optparse import OptionParser
 from command import Command
+from datetime import date
+from glob import glob
 
 #----------------- global variable ----------------#
 
@@ -73,7 +75,7 @@ class Patch(Command):
 		if os.path.isdir(self.dest_dir):
 			print ("\033[1;31m"
 					"Destination directory exists! Please delete the directory."
-					"\033[0m\n")
+					"\033[0m")
 			should_delete = raw_input("delete the directory now? (y/n) ")
 			if 'y' == should_delete.lower():
 				out = self.execBash('rm -rf %s' % self.dest_dir)[1]
@@ -95,12 +97,14 @@ class Patch(Command):
 #----------------- gen_patch_only() ----------------#
 	## generate pathes only
 	def gen_patch_only(self):
-		print ""
+		print "\n...generating patches..."
 		for project in self.GetProjects(self.args):
-			os.chdir(project.relpath)
+			os.chdir(os.path.join(self.top_dir, project.relpath))
 			print "[project]:", project.relpath
-			out = self.execBash("ls *.patch &2>/dev/null", True)[0]
-			if out:
+			#out = self.execBash("ls *.patch &2>/dev/null", True)[0]
+			#print glob("*.patch")
+			if len(glob("*.patch")):
+			#if out:
 				print ("\033[1;31m"
 					"Patches exists! Please delete before proceed."
 					"\033[0m")
@@ -111,25 +115,38 @@ class Patch(Command):
 						sys.exit(2)
 				else:
 					sys.exit(2)
-					
+
 			#print "result", out
-			out = self.execBash("git format-patch %s..%s" % 
-					(self.remote_branch, self.active_branch))[0]
-			print out
-			self.proj_with_patch.append(project.relpath)	
-			os.chdir(self.top_dir)
+			out, bad_exit = self.execBash("git format-patch %s..%s" % 
+					(self.remote_branch, self.active_branch))
+
+			if not bad_exit:
+				print out
+				self.proj_with_patch.append(project.relpath)	
+			#print self.proj_with_patch
 			#cmd = "repo forall -c 'echo && echo -n [project]: && pwd && " \
 			#	  "git format-patch %s..%s'" % (self.remote_branch, self.active_branch)
 			#out = self.execBash(cmd, True)[0]
+		os.chdir(self.top_dir)
 
 #----------------- copy_patch() ----------------#
 	## generate pathes only
 	def copy_patch(self):
+		print "\n...copying and zipping patches..."
 		for project in self.proj_with_patch:
-			cmd = "cp -r %s/*.patch %s/%s" % (project, self.dest_dir, project)
+			cmd = "cp -r %s/%s/*.patch %s/%s" %  \
+					(self.top_dir, project, self.dest_dir, project)
+			print cmd
 			out = self.execBash(cmd)[1]
 			if out:
 				sys.exit(2)
+
+#----------------- zip_patch() ----------------#
+	## zipping the patch destination directory
+	def zip_patch(self):
+		cmd = "tar -czvPf patch-%s.tar.gz %s" % (date.today(), self.dest_dir)
+		print cmd
+		out = self.execBash(cmd)
 
 #----------------- gen_patch() ----------------#
 	## generate patch and copy to destination folder then zip it
@@ -137,6 +154,7 @@ class Patch(Command):
 		self.gen_directory(dest_dir)
 		self.gen_patch_only()
 		self.copy_patch()
+		self.zip_patch()
 
 #----------------- main() ----------------#
 	def Execute(self, options, args):
