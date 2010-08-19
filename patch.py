@@ -29,6 +29,7 @@ class Patch(Command):
 	#options = None
 	#args = None
 	dest_dir = ""
+	repo_dir = ".repo"
 	proj_name=[]
 
 #----------------- parseCmd() ----------------#
@@ -65,39 +66,61 @@ class Patch(Command):
 
 #----------------- gen_directory() ----------------#
 	def gen_directory(self):
-		self.cur_dir_len = len(os.getcwd())+1
-		#print "cur_dir_len=",self.cur_dir_len;
-		self.proj_name = self.execBash("repo forall -c pwd")[0].splitlines()
-		for line in self.proj_name:
-			#print line[(self.cur_dir_len):]
-			cmd = "mkdir -p %s/%s" % (self.dest_dir, line[self.cur_dir_len:])
-			print cmd
-			result = self.execBash(cmd)[1]
-			if result:
-				print "error! return code= ", result
+		if os.path.isdir(self.dest_dir):
+			## destination directory exists
+			print ("\033[1;31m"
+					"Destination directory exists! Please delete the directory."
+					"\033[0m\n")
+			sys.exit(2)
+		else:
+			self.cur_dir_len = len(os.getcwd())+1
+			#print "cur_dir_len=",self.cur_dir_len;
+			self.proj_name = self.execBash("repo forall -c pwd")[0].splitlines()
+			for line in self.proj_name:
+				#print line[(self.cur_dir_len):]
+				cmd = "mkdir -p %s/%s" % (self.dest_dir, line[self.cur_dir_len:])
+				#print cmd
+				result = self.execBash(cmd)[1]
+				if result:
+					print "error! return code= ", result
 
-#----------------- gen_patch() ----------------#
+#----------------- gen_patch_only() ----------------#
 	def gen_patch_only(self):
 		cmd = "repo forall -p -c 'git format-patch %s..%s'" % \
 								(self.remote_branch, self.active_branch)
 		out = self.execBash(cmd)[0]
 		print out
 
+#----------------- gen_patch_only() ----------------#
+	def gen_patch(self):
+		self.gen_directory()
+		self.gen_patch_only()
+
 #----------------- main() ----------------#
 	def Execute(self, options, args):
 		#(self.options, self.args) = self.parseCmd()
 
-		## generate the empty directory hierarachy according to manifest
-		if options.dest_dir:
-			self.dest_dir = options.dest_dir
-			print "destination folder = ", self.dest_dir
-			self.gen_directory();
+		if os.path.isdir(os.path.join(os.getcwd(), self.repo_dir)):
+			## generate the empty directory hierarachy according to manifest
+			if options.dest_dir:
+				self.dest_dir = options.dest_dir
+				print "destination folder = ", self.dest_dir
+				self.gen_directory();
 
-		if options.is_gen_patch_only:
-			self.gen_patch_only()
+			if options.is_gen_patch_only:
+				self.gen_patch_only()
 
-		#if options.is_gen_patch_only:
-		#	self.gen_patch_only()
+			if options.is_gen_patch:
+				if options.dest_dir:
+					self.gen_patch()
+				else:
+					print ("\033[1;31mPlease provide absolute path destination "
+							"directory\n e.g.: $ repo patch -g -d "
+							"~/home/user/nissan-patches \033[0m\n")
+		else:
+			print ("\033[1;31mPlease execute this command at top project "
+					"directory where .repo folder exists \033[0m\n")
+
 
 #----------------- standalone() ----------------#
 ## if standalone, i.e. called directly from shell
