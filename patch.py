@@ -87,7 +87,8 @@ class Patch(Command):
 	def gen_patch_only(self):
 		print "\n...generating patches..."
 		for project in self.GetProjects(self.args):
-			self.execBash("mkdir -p %s/%s" % (self.dest_full_dir, project.relpath))
+			project_dir = "%s/%s" % (self.dest_full_dir, project.relpath)
+			self.execBash("mkdir -p %s" % project_dir)
 			os.chdir(os.path.join(self.top_dir, project.relpath))
 			title = "%s%s" % (self.project_deco, project.relpath)
 			print title
@@ -112,15 +113,25 @@ class Patch(Command):
 			print cmd
 			out, bad_exit = self.execBash(cmd, True)
 
-			if out:
+			if out and (not bad_exit):
 				print out
 				self.out_log += title + '\n' + out + '\n'
 				self.proj_with_patch.append(project.relpath)	
+			else:
+				## else delete the generated directory
+				print "-- No patches --"
+				self.execBash("rm -rf %s" % project_dir)
 			#print self.proj_with_patch
 			#cmd = "repo forall -c 'echo && echo -n [project]: && pwd && " \
 			#	  "git format-patch %s..%s'" % (self.remote_branch, self.active_branch)
 			#out = self.execBash(cmd, True)[0]
 		os.chdir(self.top_dir)
+
+		if self.out_log == "":
+			print ("\033[1;31m"
+					"Application terminated as no patches is generated"
+					"\033[0m")
+			sys.exit(2)
 
 #----------------- log_patch_summary() ----------------#
 	## storing the patch summary
@@ -141,6 +152,7 @@ class Patch(Command):
 #----------------- zip_patch() ----------------#
 	## zipping the patch destination directory
 	def zip_patch(self):
+		print "\n...zipping patches..."
 		os.chdir(self.top_dir)
 		patch_name = "patch-%s.tar.gz" % date.today()
 		if os.path.isfile(os.path.join(self.top_dir, patch_name)):
