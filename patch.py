@@ -91,7 +91,7 @@ class Patch(Command):
 			self.execBash("mkdir -p %s" % project_dir)
 			os.chdir(os.path.join(self.top_dir, project.relpath))
 			title = "%s%s" % (self.project_deco, project.relpath)
-			print title
+			print ("\033[1;34m%s\033[0m" % title)
 			#out = self.execBash("ls *.patch &2>/dev/null", True)[0]
 			#print glob("*.patch")
 			#if len(glob("*.patch")):
@@ -119,7 +119,7 @@ class Patch(Command):
 				self.proj_with_patch.append(project.relpath)	
 			else:
 				## else delete the generated directory
-				print "-- No patches --"
+				print "-- No patches --\n"
 				self.execBash("rm -rf %s" % project_dir)
 			#print self.proj_with_patch
 			#cmd = "repo forall -c 'echo && echo -n [project]: && pwd && " \
