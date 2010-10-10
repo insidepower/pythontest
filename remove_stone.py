@@ -63,7 +63,7 @@ class RemoveStone(object):
 				print "opp_grp: enumerate:",i,x
 				if pos in x[0]:
 					print "reduce the liberty of opp_grp [", i, "]"
-					me=grp[i]
+					me=opp_grp[i]
 					## if it is the last liberty, return to caller
 					## the captured stons (set type)
 					if len(me[0])==1:
@@ -72,6 +72,7 @@ class RemoveStone(object):
 						return captured
 					else:
 						me[0].remove(pos)
+						print "after reducing liberty:", me[0]
 				else:
 					print "not in grp"
 		print grp
@@ -102,10 +103,10 @@ class RemoveStone(object):
 
 if __name__ == "__main__":   #if it is standalone(./xxx.py), then call main
 	test=RemoveStone()
-	test.remove_stone('sa', 'b')
-	test.remove_stone('sb', 'w')
-	test.remove_stone('rb', 'b')
-	test.remove_stone('ra', 'w')
+	print "\n captured: ", test.remove_stone('sa', 'b')
+	print "\n captured: ", test.remove_stone('sb', 'w')
+	print "\n captured: ", test.remove_stone('rb', 'b')
+	print "\n captured: ", test.remove_stone('ra', 'w')
 
 ### test
 # B[sa];W[sb];B[rb];W[ra]

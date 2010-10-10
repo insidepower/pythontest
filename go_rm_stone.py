@@ -1,0 +1,106 @@
+#!/usr/bin/python
+
+class RemoveStone(object):
+	## board=set(color+'pos', color+'pos2', ... )
+	board = set()
+	captured_stone = []
+	temp = set()
+	pos = None
+	color = None
+	invert_color = None
+	alive = False
+	neighbour_checked=set()
+
+	def rm_stone(self, pos, color, invert_color):
+		print ""
+		assert (pos not in self.board)
+		self.pos = pos
+		self.color = color;
+		self.invert_color = invert_color
+		## insert into board
+		self.board.update([color+pos])
+		print self.board
+		self.neighbour_checked = set()
+		self.alive = False
+		self.recursive_check()
+		if self.captured_stone:
+			captured = self.captured_stone
+			self.captured_stone = []
+			print "captured:", captured
+			return captured
+
+	def recursive_check(self):
+		for liberty in self.my_liberty(self.pos):
+			print "liberty:", liberty
+			if self.invert_color+liberty not in self.board:
+				## this group have liberty, ignore
+				pass
+			elif self.invert_color+liberty in self.board:
+				if self.captured_check(liberty):
+					self.captured_stone.append([self.temp])
+				## reset variable
+				self.temp = set()
+				self.alive = False
+				self.neighbour_checked = set()
+
+	def captured_check(self, pos):
+		print "captured_check: pos =", pos
+		for liberty in self.my_liberty(pos):
+			print "captured_check: liberty = ", liberty
+			if not self.alive and liberty not in self.neighbour_checked:
+				self.neighbour_checked.update(liberty)
+				print "neighbour_checked =", self.neighbour_checked
+				print "neighbour_checked : alive =", self.alive
+			else:
+				print "neighbour_checked : else, alive =", self.alive
+				return False
+
+			## color here is inverted
+			if self.color+liberty not in self.board:
+				print "captured_check: alive, stone=", self.color+liberty
+				print "captured_check: board:", self.board
+				self.alive = True
+				return False
+			elif self.color+liberty in self.board:
+				self.temp.add(pos);
+				print "temp =", self.temp
+		return True
+
+	def my_liberty(self, pos):
+		## return the liberties of this stone have
+		liberty=[]
+
+		## get the neighbour base on first coordinate of pos
+		if pos[0]=='a':
+			liberty.append('b'+pos[1])
+		elif pos[0]=='s':
+			liberty.append('r'+pos[1])
+		else:   ## a < pos[0] < s
+			num=ord(pos[0])
+			liberty.extend([chr(num-1)+pos[1], chr(num+1)+pos[1]])
+
+		## get the neighbour base on second coordinate of pos
+		if pos[1]=='a':
+			liberty.append(pos[0]+'b')
+		elif pos[1]=='s':
+			liberty.append(pos[0]+'r')
+		else:   ## a < pos[1] < s
+			num=ord(pos[1])
+			liberty.extend([pos[0]+chr(num-1), pos[0]+chr(num+1)])
+		print "liberty:",liberty
+		return liberty
+
+if __name__ == "__main__":   #if it is standalone(./xxx.py), then call main
+	test=RemoveStone()
+	print "\n captured: ", test.rm_stone('sa', 'B', 'W')
+	print "\n captured: ", test.rm_stone('sb', 'W', 'B')
+	print "\n captured: ", test.rm_stone('rb', 'B', 'W')
+	print "\n captured: ", test.rm_stone('ra', 'W', 'B')
+
+### test
+# B[sa];W[sb];B[rb];W[ra]
+### result ###
+# ['ra', 'sb']
+# ['rb', 'sa', 'sc']
+# ['qb', 'sb', 'ra', 'rc']
+# ['qa', 'sa', 'rb']
