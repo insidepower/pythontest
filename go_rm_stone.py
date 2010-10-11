@@ -13,6 +13,7 @@ class RemoveStone(object):
 
 	def rm_stone(self, pos, color, invert_color):
 		print ""
+		print "rm_stone: pos =", pos, "; color =", color
 		assert (pos not in self.board)
 		self.pos = pos
 		self.color = color;
@@ -49,25 +50,35 @@ class RemoveStone(object):
 	def captured_check(self, pos):
 		print "captured_check: pos =", pos
 		for liberty in self.my_liberty(pos):
-			print "captured_check: liberty = ", liberty
+			print " == liberty = ", liberty
+
+			## since some are shared liberty between a few stones,
+			## we want to skip whatever we have checked previously.
+			## if it has been checked, return False
+			## or if this group is alive, return False
 			if not self.alive and liberty not in self.neighbour_checked:
 				self.neighbour_checked.add(liberty)
-				print "neighbour_checked =", self.neighbour_checked
-				print "neighbour_checked : alive =", self.alive
+				print " == neighbour_checked =", self.neighbour_checked, ";",self.alive
 			else:
-				print "neighbour_checked : else, alive =", self.alive
+				print " == neighbour_checked : else, alive =", self.alive
 				return False
 
 			## color here is inverted
-			if self.color+liberty not in self.board:
-				print "captured_check: alive, stone=", self.color+liberty
-				print "captured_check: board:", self.board
+			if self.invert_color+liberty in self.board:
+				## found connect stone of same color, expand the liberty
+				## and check if this group is being captured or not
+				self.captured_check(liberty)
+			elif self.color+liberty not in self.board:
+				## this group has at least one liberty
+				print " == captured_check: alive, liberty @", liberty
+				#print "captured_check: board:", self.board
 				self.alive = True
 				return False
 			elif self.color+liberty in self.board:
+				## add the possible dead stone to temp
 				self.temp.add(pos);
-				print "temp =", self.temp
-				self.captured_check(liberty)
+				print " == temp =", self.temp
+				## continue recursive check for possible captured stone
 		return True
 
 	def my_liberty(self, pos):
