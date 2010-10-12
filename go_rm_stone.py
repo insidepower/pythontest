@@ -117,7 +117,7 @@ class RemoveStone(object):
 
 if __name__ == "__main__":   #if it is standalone(./xxx.py), then call main
 	test=RemoveStone()
-	testcase = 5;
+	testcase = 6;
 
 if testcase == 1:
 ### test 1 ###
@@ -182,3 +182,15 @@ if testcase == 5:
 	print "\n captured: ", test.rm_stone('qd', 'W', 'B')
 	print "\n captured: ", test.rm_stone('rd', 'W', 'B')
 	print "\n captured: ", test.rm_stone('sd', 'W', 'B')
+
+if testcase == 6:
+	print "\n captured: ", test.rm_stone('qa', 'B', 'W')  ## captured
+	print "\n captured: ", test.rm_stone('sa', 'B', 'W')  ## captured
+	print "\n captured: ", test.rm_stone('qb', 'B', 'W')  ## captured
+	print "\n captured: ", test.rm_stone('rb', 'B', 'W')  ## captured
+	print "\n captured: ", test.rm_stone('pa', 'W', 'B')
+	print "\n captured: ", test.rm_stone('pb', 'W', 'B')
+	print "\n captured: ", test.rm_stone('sb', 'W', 'B')
+	print "\n captured: ", test.rm_stone('qc', 'W', 'B')
+	print "\n captured: ", test.rm_stone('rc', 'W', 'B')
+	print "\n captured: ", test.rm_stone('ra', 'W', 'B')
