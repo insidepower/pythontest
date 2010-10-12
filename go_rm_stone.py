@@ -41,6 +41,7 @@ class RemoveStone(object):
 			elif self.invert_color+liberty in self.board:
 				print "recursive_check:", self.invert_color+liberty
 				#self.neighbour_checked.add(self.pos)
+				self.temp.add(liberty)
 				if self.captured_check(liberty):
 					self.captured_stone.append([self.temp])
 				## reset variable
@@ -51,7 +52,7 @@ class RemoveStone(object):
 	def captured_check(self, pos):
 		print "captured_check: pos =", pos
 		for liberty in self.my_liberty(pos):
-			if liberty == self.temp or liberty == self.pos:
+			if liberty in self.temp or liberty == self.pos:
 				print "liberty in temp/self.pos:", liberty, ", so pass"
 				continue
 
@@ -116,7 +117,7 @@ class RemoveStone(object):
 
 if __name__ == "__main__":   #if it is standalone(./xxx.py), then call main
 	test=RemoveStone()
-	testcase = 2;
+	testcase = 5;
 
 if testcase == 1:
 ### test 1 ###
@@ -158,9 +159,26 @@ if testcase == 4:
 ### test 4 ###
 	print "\n captured: ", test.rm_stone('sa', 'B', 'W')  ## captured
 	print "\n captured: ", test.rm_stone('sb', 'B', 'W')  ## captured
-	print "\n captured: ", test.rm_stone('ra', 'B', 'w')  ## captured
-	print "\n captured: ", test.rm_stone('rb', 'B', 'w')  ## captured
+	print "\n captured: ", test.rm_stone('ra', 'B', 'W')  ## captured
+	print "\n captured: ", test.rm_stone('rb', 'B', 'W')  ## captured
 	print "\n captured: ", test.rm_stone('sc', 'W', 'B')
 	print "\n captured: ", test.rm_stone('rc', 'W', 'B')
 	print "\n captured: ", test.rm_stone('qa', 'W', 'B')
 	print "\n captured: ", test.rm_stone('qb', 'W', 'B')
+
+if testcase == 5:
+### test 4 ###
+	print "\n captured: ", test.rm_stone('qa', 'B', 'W')  ## captured
+	print "\n captured: ", test.rm_stone('qb', 'B', 'W')  ## captured
+	print "\n captured: ", test.rm_stone('qc', 'B', 'W')  ## captured
+	print "\n captured: ", test.rm_stone('rc', 'B', 'W')  ## captured
+	print "\n captured: ", test.rm_stone('sc', 'B', 'W')  ## captured
+	print "\n captured: ", test.rm_stone('pa', 'W', 'B')
+	print "\n captured: ", test.rm_stone('ra', 'W', 'B')
+	print "\n captured: ", test.rm_stone('pb', 'W', 'B')
+	print "\n captured: ", test.rm_stone('rb', 'W', 'B')
+	print "\n captured: ", test.rm_stone('sb', 'W', 'B')
+	print "\n captured: ", test.rm_stone('pc', 'W', 'B')
+	print "\n captured: ", test.rm_stone('qd', 'W', 'B')
+	print "\n captured: ", test.rm_stone('rd', 'W', 'B')
+	print "\n captured: ", test.rm_stone('sd', 'W', 'B')
