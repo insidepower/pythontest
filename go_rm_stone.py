@@ -40,6 +40,7 @@ class RemoveStone(object):
 				pass
 			elif self.invert_color+liberty in self.board:
 				print "recursive_check:", self.invert_color+liberty
+				#self.neighbour_checked.add(self.pos)
 				if self.captured_check(liberty):
 					self.captured_stone.append([self.temp])
 				## reset variable
@@ -50,6 +51,10 @@ class RemoveStone(object):
 	def captured_check(self, pos):
 		print "captured_check: pos =", pos
 		for liberty in self.my_liberty(pos):
+			if liberty in self.temp:
+				print "liberty in temp:", liberty, ", so pass"
+				continue
+
 			print " == liberty = ", liberty
 
 			## since some are shared liberty between a few stones,
@@ -67,6 +72,8 @@ class RemoveStone(object):
 			if self.invert_color+liberty in self.board:
 				## found connect stone of same color, expand the liberty
 				## and check if this group is being captured or not
+				print "recursive capture check:", liberty
+				self.temp.add(liberty)
 				self.captured_check(liberty)
 			elif self.color+liberty not in self.board:
 				## this group has at least one liberty
@@ -78,6 +85,8 @@ class RemoveStone(object):
 				## add the possible dead stone to temp
 				self.temp.add(pos);
 				print " == temp =", self.temp
+			else:
+				print " *** why i am here *** "
 				## continue recursive check for possible captured stone
 		return True
 
@@ -107,13 +116,15 @@ class RemoveStone(object):
 
 if __name__ == "__main__":   #if it is standalone(./xxx.py), then call main
 	test=RemoveStone()
+	testcase = 4;
 
+if testcase == 1:
 ### test 1 ###
 # B[sa];W[sb];B[rb];W[ra]
-	#print "\n captured: ", test.rm_stone('sa', 'B', 'W')
-	#print "\n captured: ", test.rm_stone('sb', 'W', 'B')
-	#print "\n captured: ", test.rm_stone('rb', 'B', 'W')
-	#print "\n captured: ", test.rm_stone('ra', 'W', 'B')
+	print "\n captured: ", test.rm_stone('sa', 'B', 'W')
+	print "\n captured: ", test.rm_stone('sb', 'W', 'B')
+	print "\n captured: ", test.rm_stone('rb', 'B', 'W')
+	print "\n captured: ", test.rm_stone('ra', 'W', 'B')
 
 	### result ###
 	# ['ra', 'sb']
@@ -121,19 +132,35 @@ if __name__ == "__main__":   #if it is standalone(./xxx.py), then call main
 	# ['qb', 'sb', 'ra', 'rc']
 	# ['qa', 'sa', 'rb']
 
+if testcase == 2:
 ### test 2 ###
-	#print "\n captured: ", test.rm_stone('rb', 'B', 'W')  ## captured
-	#print "\n captured: ", test.rm_stone('ra', 'W', 'B')
-	#print "\n captured: ", test.rm_stone('rc', 'W', 'B')
-	#print "\n captured: ", test.rm_stone('qb', 'W', 'B')
-	#print "\n captured: ", test.rm_stone('sb', 'W', 'B')
+	print "\n captured: ", test.rm_stone('rb', 'B', 'W')  ## captured
+	print "\n captured: ", test.rm_stone('ra', 'W', 'B')
+	print "\n captured: ", test.rm_stone('rc', 'W', 'B')
+	print "\n captured: ", test.rm_stone('qb', 'W', 'B')
+	print "\n captured: ", test.rm_stone('sb', 'W', 'B')
 
+if testcase == 3:
 ### test 3 ###
 	print "\n captured: ", test.rm_stone('rb', 'B', 'W')  ## captured
 	print "\n captured: ", test.rm_stone('rc', 'B', 'W')  ## captured
+	print "\n captured: ", test.rm_stone('rd', 'B', 'w')  ## captured
 	print "\n captured: ", test.rm_stone('ra', 'W', 'B')
-	print "\n captured: ", test.rm_stone('rd', 'W', 'B')
+	print "\n captured: ", test.rm_stone('re', 'W', 'B')
+	print "\n captured: ", test.rm_stone('qd', 'W', 'B')
+	print "\n captured: ", test.rm_stone('sd', 'W', 'B')
 	print "\n captured: ", test.rm_stone('qb', 'W', 'B')
 	print "\n captured: ", test.rm_stone('sb', 'W', 'B')
 	print "\n captured: ", test.rm_stone('qc', 'W', 'B')
 	print "\n captured: ", test.rm_stone('sc', 'W', 'B')
+
+if testcase == 4:
+### test 4 ###
+	print "\n captured: ", test.rm_stone('sa', 'B', 'W')  ## captured
+	print "\n captured: ", test.rm_stone('sb', 'B', 'W')  ## captured
+	print "\n captured: ", test.rm_stone('ra', 'B', 'w')  ## captured
+	print "\n captured: ", test.rm_stone('rb', 'B', 'w')  ## captured
+	print "\n captured: ", test.rm_stone('sc', 'W', 'B')
+	print "\n captured: ", test.rm_stone('rc', 'W', 'B')
+	print "\n captured: ", test.rm_stone('qa', 'W', 'B')
+	print "\n captured: ", test.rm_stone('qb', 'W', 'B')
