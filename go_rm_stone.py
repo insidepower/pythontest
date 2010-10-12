@@ -51,8 +51,8 @@ class RemoveStone(object):
 	def captured_check(self, pos):
 		print "captured_check: pos =", pos
 		for liberty in self.my_liberty(pos):
-			if liberty in self.temp:
-				print "liberty in temp:", liberty, ", so pass"
+			if liberty == self.temp or liberty == self.pos:
+				print "liberty in temp/self.pos:", liberty, ", so pass"
 				continue
 
 			print " == liberty = ", liberty
@@ -116,7 +116,7 @@ class RemoveStone(object):
 
 if __name__ == "__main__":   #if it is standalone(./xxx.py), then call main
 	test=RemoveStone()
-	testcase = 4;
+	testcase = 2;
 
 if testcase == 1:
 ### test 1 ###
