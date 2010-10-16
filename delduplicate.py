@@ -38,6 +38,7 @@ def main():
 	(options, args) = parseCmd()
 	print "start"
 	reg_obj = re.compile(r"(.*: )*([0-9a-z]{40})")
+	reg_obj2 = re.compile(r"project .*/")
 	match_id = []
 	line_to_del = []
 	content = []
@@ -69,12 +70,43 @@ def main():
 		#del content[num]
 	f.close()
 
-	for line in content:
-		#pass
-		print line
+	line_to_del = []
+	for i, line in enumerate(content):
+		if line == "project commitlog/":
+			line_to_del.append(i)
+			for m, delline in enumerate(content[i+1:]):
+				if delline != "":
+					print "nonbreaking:", delline
+					line_to_del.append(i+1+m)
+					print line_to_del
+				else:
+					print "breaking: ", delline
+					break
+
+		if line == " ============================================================= ":
+			line_to_del.append(i)
+			for m, delline in enumerate(content[i:]):
+				if delline == "":
+					line_to_del.append(m)
+				else:
+					break
+
+		if reg_obj2.match(line) and content[i+1]=="":
+			line_to_del.append(i)
+			line_to_del.append(i+1)
+
+	content2 = []
+	for i, line in enumerate(content):
+		if i not in line_to_del:
+			content2.append(line)
+
+	#for i, line in enumerate(content):
+	#	if reg_obj2.match(line) and content[i+1]=="":
+	#		del content[i]
+	#		del content[i+1]
 
 	f = open("/home/uidc1325/Desktop/uncommited.log", "w")
-	f.writelines("\n".join(content))
+	f.writelines("\n".join(content2))
 	f.close()
 
 #----------------- standalone() ----------------#
