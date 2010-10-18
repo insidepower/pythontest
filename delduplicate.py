@@ -26,7 +26,7 @@ def parseCmd():
 
 #----------------- execBash() ----------------#
 def execBash(cmd):
-	#print cmd
+	print cmd
 	p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
 	out = p.stdout.read()
 	#print out
@@ -38,7 +38,7 @@ def main():
 	(options, args) = parseCmd()
 	print "start"
 	reg_obj = re.compile(r"(.*: )*([0-9a-z]{40})")
-	reg_obj2 = re.compile(r"project .*/")
+	reg_obj2 = re.compile(r"project (.*)/")
 	match_id = []
 	line_to_del = []
 	content = []
@@ -76,11 +76,11 @@ def main():
 			line_to_del.append(i)
 			for m, delline in enumerate(content[i+1:]):
 				if delline != "":
-					print "nonbreaking:", delline
+					#print "nonbreaking:", delline
 					line_to_del.append(i+1+m)
-					print line_to_del
+					#print line_to_del
 				else:
-					print "breaking: ", delline
+					#print "breaking: ", delline
 					break
 
 		if line == " ============================================================= ":
@@ -100,6 +100,25 @@ def main():
 		if i not in line_to_del:
 			content2.append(line)
 
+	committer = []
+	for i, line in enumerate(content2):
+		proj_name = reg_obj2.match(line)
+		current_dir = os.getcwd()
+		if proj_name:
+			my_proj_name = proj_name.group(1)
+			committer.append(str("project " +my_proj_name+"/"))
+			os.chdir(my_proj_name)
+			print execBash("echo 'now at' `pwd`")
+			for line2 in content2[i+1:]:
+				if line2 != "":
+					print "line2 =", line2
+					author = execBash("git log %s -n1 --pretty=%%an" % line2[:39])[:-1]
+					committer.append(str(author+" - "+line2))
+				else:
+					break
+			os.chdir(current_dir)
+			committer.append(str(""))
+
 	#for i, line in enumerate(content):
 	#	if reg_obj2.match(line) and content[i+1]=="":
 	#		del content[i]
@@ -107,6 +126,7 @@ def main():
 
 	f = open("/home/uidc1325/Desktop/uncommited.log", "w")
 	f.writelines("\n".join(content2))
+	f.writelines("\n".join(committer))
 	f.close()
 
 #----------------- standalone() ----------------#
