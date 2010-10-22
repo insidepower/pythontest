@@ -40,7 +40,8 @@ def main():
 	reg_obj = re.compile(r"(.*: )*([0-9a-z]{40})")
 	reg_obj2 = re.compile(r"project (.*)/")
 	match_id = []
-	line_to_del = []
+	match_id_line = []
+	line_to_del = set()
 	content = []
 
 	## -- open file -- ##
@@ -54,11 +55,11 @@ def main():
 			commit_id = proj_name.group(2)
 			if commit_id in match_id:
 				## second match, i.e. commit has been logged, proceed to delete this line
-				line_to_del.append(i)
-				line_to_del.append(match_id[match_id.index(commit_id)+1])
+				line_to_del.add(i)
+				line_to_del.add(match_id_line[match_id.index(commit_id)])
 			else:
 				match_id.append(commit_id)
-				match_id.append(i)
+				match_id_line.append(i)
 	f.close()
 	
 	f = open(args[0])
@@ -70,30 +71,30 @@ def main():
 		#del content[num]
 	f.close()
 
-	line_to_del = []
+	line_to_del = set()
 	for i, line in enumerate(content):
 		if line == "project commitlog/":
-			line_to_del.append(i)
+			line_to_del.add(i)
 			for m, delline in enumerate(content[i+1:]):
 				if delline != "":
 					#print "nonbreaking:", delline
-					line_to_del.append(i+1+m)
+					line_to_del.add(i+1+m)
 					#print line_to_del
 				else:
 					#print "breaking: ", delline
 					break
 
 		if line == " ============================================================= ":
-			line_to_del.append(i)
+			line_to_del.add(i)
 			for m, delline in enumerate(content[i:]):
 				if delline == "":
-					line_to_del.append(m)
+					line_to_del.add(m)
 				else:
 					break
 
-		if reg_obj2.match(line) and content[i+1]=="":
-			line_to_del.append(i)
-			line_to_del.append(i+1)
+		#if reg_obj2.match(line) and content[i+1]=="":
+		#	line_to_del.add(i)
+		#	line_to_del.add(i+1)
 
 	content2 = []
 	for i, line in enumerate(content):
@@ -125,7 +126,7 @@ def main():
 	#		del content[i+1]
 
 	f = open("/home/uidc1325/Desktop/uncommited.log", "w")
-	f.writelines("\n".join(content2))
+	#f.writelines("\n".join(content2))
 	f.writelines("\n".join(committer))
 	f.close()
 
