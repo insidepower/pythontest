@@ -1,7 +1,9 @@
 #!/usr/bin/python
+# return a set of captured stone
+
 from dbg_print import dbg_p as dbg_p
 
-class RemoveStone(object):
+class AddStone(object):
 	## board=set(color+'pos', color+'pos2', ... )
 	board = set()
 	captured_stone = set()
@@ -11,14 +13,15 @@ class RemoveStone(object):
 	invert_color = None
 	alive = False
 	neighbour_checked=set()
+	invert_color_dict={'W':'B', 'B':'W'}
 
-	def rm_stone(self, pos, color, invert_color):
+	def add_me(self, pos, color):
 		dbg_p("")
-		dbg_p("rm_stone: pos =", pos, "; color =", color)
+		dbg_p("add_me: pos =", pos, "; color =", color)
 		assert (pos not in self.board)
 		self.pos = pos
 		self.color = color;
-		self.invert_color = invert_color
+		self.invert_color = self.invert_color_dict[color]
 		## insert into board
 		self.board.update([color+pos])
 		dbg_p(self.board)
@@ -30,6 +33,9 @@ class RemoveStone(object):
 			self.captured_stone = set()
 			dbg_p("captured:", captured)
 			## todo: remove captured stone from board
+			for s in captured:
+				self.board.remove(self.invert_color+s)
+			dbg_p("board:", self.board)
 			return captured
 
 	def recursive_check(self):
@@ -117,16 +123,16 @@ class RemoveStone(object):
 		return liberty
 
 if __name__ == "__main__":   #if it is standalone(./xxx.py), then call main
-	test=RemoveStone()
+	test=AddStone()
 	testcase = 6;
 
 if testcase == 1:
 ### test 1 ###
 # B[sa];W[sb];B[rb];W[ra]
-	print "\n captured: ", test.rm_stone('sa', 'B', 'W')
-	print "\n captured: ", test.rm_stone('sb', 'W', 'B')
-	print "\n captured: ", test.rm_stone('rb', 'B', 'W')
-	print "\n captured: ", test.rm_stone('ra', 'W', 'B')
+	print "\n captured: ", test.add_me('sa', 'B')
+	print "\n captured: ", test.add_me('sb', 'W')
+	print "\n captured: ", test.add_me('rb', 'B')
+	print "\n captured: ", test.add_me('ra', 'W')
 
 	### result ###
 	# ['ra', 'sb']
@@ -136,62 +142,62 @@ if testcase == 1:
 
 if testcase == 2:
 ### test 2 ###
-	print "\n captured: ", test.rm_stone('rb', 'B', 'W')  ## captured
-	print "\n captured: ", test.rm_stone('ra', 'W', 'B')
-	print "\n captured: ", test.rm_stone('rc', 'W', 'B')
-	print "\n captured: ", test.rm_stone('qb', 'W', 'B')
-	print "\n captured: ", test.rm_stone('sb', 'W', 'B')
+	print "\n captured: ", test.add_me('rb', 'B')  ## captured
+	print "\n captured: ", test.add_me('ra', 'W')
+	print "\n captured: ", test.add_me('rc', 'W')
+	print "\n captured: ", test.add_me('qb', 'W')
+	print "\n captured: ", test.add_me('sb', 'W')
 
 if testcase == 3:
 ### test 3 ###
-	print "\n captured: ", test.rm_stone('rb', 'B', 'W')  ## captured
-	print "\n captured: ", test.rm_stone('rc', 'B', 'W')  ## captured
-	print "\n captured: ", test.rm_stone('rd', 'B', 'w')  ## captured
-	print "\n captured: ", test.rm_stone('ra', 'W', 'B')
-	print "\n captured: ", test.rm_stone('re', 'W', 'B')
-	print "\n captured: ", test.rm_stone('qd', 'W', 'B')
-	print "\n captured: ", test.rm_stone('sd', 'W', 'B')
-	print "\n captured: ", test.rm_stone('qb', 'W', 'B')
-	print "\n captured: ", test.rm_stone('sb', 'W', 'B')
-	print "\n captured: ", test.rm_stone('qc', 'W', 'B')
-	print "\n captured: ", test.rm_stone('sc', 'W', 'B')
+	print "\n captured: ", test.add_me('rb', 'B')  ## captured
+	print "\n captured: ", test.add_me('rc', 'B')  ## captured
+	print "\n captured: ", test.add_me('rd', 'B')  ## captured
+	print "\n captured: ", test.add_me('ra', 'W')
+	print "\n captured: ", test.add_me('re', 'W')
+	print "\n captured: ", test.add_me('qd', 'W')
+	print "\n captured: ", test.add_me('sd', 'W')
+	print "\n captured: ", test.add_me('qb', 'W')
+	print "\n captured: ", test.add_me('sb', 'W')
+	print "\n captured: ", test.add_me('qc', 'W')
+	print "\n captured: ", test.add_me('sc', 'W')
 
 if testcase == 4:
 ### test 4 ###
-	print "\n captured: ", test.rm_stone('sa', 'B', 'W')  ## captured
-	print "\n captured: ", test.rm_stone('sb', 'B', 'W')  ## captured
-	print "\n captured: ", test.rm_stone('ra', 'B', 'W')  ## captured
-	print "\n captured: ", test.rm_stone('rb', 'B', 'W')  ## captured
-	print "\n captured: ", test.rm_stone('sc', 'W', 'B')
-	print "\n captured: ", test.rm_stone('rc', 'W', 'B')
-	print "\n captured: ", test.rm_stone('qa', 'W', 'B')
-	print "\n captured: ", test.rm_stone('qb', 'W', 'B')
+	print "\n captured: ", test.add_me('sa', 'B')  ## captured
+	print "\n captured: ", test.add_me('sb', 'B')  ## captured
+	print "\n captured: ", test.add_me('ra', 'B')  ## captured
+	print "\n captured: ", test.add_me('rb', 'B')  ## captured
+	print "\n captured: ", test.add_me('sc', 'W')
+	print "\n captured: ", test.add_me('rc', 'W')
+	print "\n captured: ", test.add_me('qa', 'W')
+	print "\n captured: ", test.add_me('qb', 'W')
 
 if testcase == 5:
 ### test 4 ###
-	print "\n captured: ", test.rm_stone('qa', 'B', 'W')  ## captured
-	print "\n captured: ", test.rm_stone('qb', 'B', 'W')  ## captured
-	print "\n captured: ", test.rm_stone('qc', 'B', 'W')  ## captured
-	print "\n captured: ", test.rm_stone('rc', 'B', 'W')  ## captured
-	print "\n captured: ", test.rm_stone('sc', 'B', 'W')  ## captured
-	print "\n captured: ", test.rm_stone('pa', 'W', 'B')
-	print "\n captured: ", test.rm_stone('ra', 'W', 'B')
-	print "\n captured: ", test.rm_stone('pb', 'W', 'B')
-	print "\n captured: ", test.rm_stone('rb', 'W', 'B')
-	print "\n captured: ", test.rm_stone('sb', 'W', 'B')
-	print "\n captured: ", test.rm_stone('pc', 'W', 'B')
-	print "\n captured: ", test.rm_stone('qd', 'W', 'B')
-	print "\n captured: ", test.rm_stone('rd', 'W', 'B')
-	print "\n captured: ", test.rm_stone('sd', 'W', 'B')
+	print "\n captured: ", test.add_me('qa', 'B')  ## captured
+	print "\n captured: ", test.add_me('qb', 'B')  ## captured
+	print "\n captured: ", test.add_me('qc', 'B')  ## captured
+	print "\n captured: ", test.add_me('rc', 'B')  ## captured
+	print "\n captured: ", test.add_me('sc', 'B')  ## captured
+	print "\n captured: ", test.add_me('pa', 'W')
+	print "\n captured: ", test.add_me('ra', 'W')
+	print "\n captured: ", test.add_me('pb', 'W')
+	print "\n captured: ", test.add_me('rb', 'W')
+	print "\n captured: ", test.add_me('sb', 'W')
+	print "\n captured: ", test.add_me('pc', 'W')
+	print "\n captured: ", test.add_me('qd', 'W')
+	print "\n captured: ", test.add_me('rd', 'W')
+	print "\n captured: ", test.add_me('sd', 'W')
 
 if testcase == 6:
-	print "\n captured: ", test.rm_stone('qa', 'B', 'W')  ## captured
-	print "\n captured: ", test.rm_stone('sa', 'B', 'W')  ## captured
-	print "\n captured: ", test.rm_stone('qb', 'B', 'W')  ## captured
-	print "\n captured: ", test.rm_stone('rb', 'B', 'W')  ## captured
-	print "\n captured: ", test.rm_stone('pa', 'W', 'B')
-	print "\n captured: ", test.rm_stone('pb', 'W', 'B')
-	print "\n captured: ", test.rm_stone('sb', 'W', 'B')
-	print "\n captured: ", test.rm_stone('qc', 'W', 'B')
-	print "\n captured: ", test.rm_stone('rc', 'W', 'B')
-	print "\n captured: ", test.rm_stone('ra', 'W', 'B')
+	print "\n captured: ", test.add_me('qa', 'B')  ## captured
+	print "\n captured: ", test.add_me('sa', 'B')  ## captured
+	print "\n captured: ", test.add_me('qb', 'B')  ## captured
+	print "\n captured: ", test.add_me('rb', 'B')  ## captured
+	print "\n captured: ", test.add_me('pa', 'W')
+	print "\n captured: ", test.add_me('pb', 'W')
+	print "\n captured: ", test.add_me('sb', 'W')
+	print "\n captured: ", test.add_me('qc', 'W')
+	print "\n captured: ", test.add_me('rc', 'W')
+	print "\n captured: ", test.add_me('ra', 'W')
