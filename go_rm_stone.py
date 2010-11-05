@@ -1,9 +1,10 @@
 #!/usr/bin/python
+from dbg_print import dbg_p as dbg_p
 
 class RemoveStone(object):
 	## board=set(color+'pos', color+'pos2', ... )
 	board = set()
-	captured_stone = []
+	captured_stone = set()
 	temp = set()
 	pos = None
 	color = None
@@ -12,51 +13,51 @@ class RemoveStone(object):
 	neighbour_checked=set()
 
 	def rm_stone(self, pos, color, invert_color):
-		print ""
-		print "rm_stone: pos =", pos, "; color =", color
+		dbg_p("")
+		dbg_p("rm_stone: pos =", pos, "; color =", color)
 		assert (pos not in self.board)
 		self.pos = pos
 		self.color = color;
 		self.invert_color = invert_color
 		## insert into board
 		self.board.update([color+pos])
-		print self.board
+		dbg_p(self.board)
 		self.neighbour_checked = set()
 		self.alive = False
 		self.recursive_check()
 		if self.captured_stone:
 			captured = self.captured_stone
-			self.captured_stone = []
-			print "captured:", captured
+			self.captured_stone = set()
+			dbg_p("captured:", captured)
 			## todo: remove captured stone from board
 			return captured
 
 	def recursive_check(self):
 		for liberty in self.my_liberty(self.pos):
-			print "liberty:", liberty
+			dbg_p("liberty:", liberty)
 			if self.invert_color+liberty not in self.board:
 				## this group have liberty, ignore
-				print "recursive_check: pass =", self.invert_color+liberty
+				dbg_p("recursive_check: pass =", self.invert_color+liberty)
 				pass
 			elif self.invert_color+liberty in self.board:
-				print "recursive_check:", self.invert_color+liberty
+				dbg_p("recursive_check:", self.invert_color+liberty)
 				#self.neighbour_checked.add(self.pos)
 				self.temp.add(liberty)
 				if self.captured_check(liberty):
-					self.captured_stone.append([self.temp])
+					self.captured_stone.update(self.temp)
 				## reset variable
 				self.temp = set()
 				self.alive = False
 				self.neighbour_checked = set()
 
 	def captured_check(self, pos):
-		print "captured_check: pos =", pos
+		dbg_p("captured_check: pos =", pos)
 		for liberty in self.my_liberty(pos):
 			if liberty in self.temp or liberty == self.pos:
-				print "liberty in temp/self.pos:", liberty, ", so pass"
+				dbg_p("liberty in temp/self.pos:", liberty, ", so pass")
 				continue
 
-			print " == liberty = ", liberty
+			dbg_p(" == liberty = ", liberty)
 
 			## since some are shared liberty between a few stones,
 			## we want to skip whatever we have checked previously.
@@ -64,30 +65,30 @@ class RemoveStone(object):
 			## or if this group is alive, return False
 			if not self.alive and liberty not in self.neighbour_checked:
 				self.neighbour_checked.add(liberty)
-				print " == neighbour_checked =", self.neighbour_checked, ";",self.alive
+				dbg_p(" == neighbour_checked =", self.neighbour_checked, ";",self.alive)
 			else:
-				print " == neighbour_checked : else, alive =", self.alive
+				dbg_p(" == neighbour_checked : else, alive =", self.alive)
 				return False
 
 			## color here is inverted
 			if self.invert_color+liberty in self.board:
 				## found connect stone of same color, expand the liberty
 				## and check if this group is being captured or not
-				print "recursive capture check:", liberty
+				dbg_p("recursive capture check:", liberty)
 				self.temp.add(liberty)
 				self.captured_check(liberty)
 			elif self.color+liberty not in self.board:
 				## this group has at least one liberty
-				print " == captured_check: alive, liberty @", liberty
-				#print "captured_check: board:", self.board
+				dbg_p(" == captured_check: alive, liberty @", liberty)
+				#dbg_p("captured_check: board:", self.board)
 				self.alive = True
 				return False
 			elif self.color+liberty in self.board:
 				## add the possible dead stone to temp
 				self.temp.add(pos);
-				print " == temp =", self.temp
+				dbg_p(" == temp =", self.temp)
 			else:
-				print " *** why i am here *** "
+				dbg_p(" *** why i am here *** ")
 				## continue recursive check for possible captured stone
 		return True
 
@@ -112,7 +113,7 @@ class RemoveStone(object):
 		else:   ## a < pos[1] < s
 			num=ord(pos[1])
 			liberty.extend([pos[0]+chr(num-1), pos[0]+chr(num+1)])
-		print "liberty:",liberty
+		dbg_p("liberty:",liberty)
 		return liberty
 
 if __name__ == "__main__":   #if it is standalone(./xxx.py), then call main
