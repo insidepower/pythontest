@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
-debug=False
+#debug=False
+debug=True
 
 def dbg_p(*args):
 	if not debug:
