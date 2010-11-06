@@ -37,6 +37,8 @@ class parse_sgf(object):
 				self.depth += 1
 				break
 
+		assert self.depth != 0, "Error in parsing sgf file, not property (; found"
+
 		## find out the line the game play sequence started
 		for m, line in enumerate(self.game_lines[i:]):
 			result = self.reg_bw.search(line)
@@ -49,7 +51,7 @@ class parse_sgf(object):
 		self.parse_game_info(game_str)
 
 		## parse game play
-		self.parse_game_play(i)
+		self.parse_game_play(m)
 
 		## free up space
 		del self.game_lines
@@ -78,9 +80,18 @@ class parse_sgf(object):
 
 	#------ < parse_game_play > ------
 	def parse_game_play(self, i):
+
+		## if this is the first line, check how many property (; on this line 
+		start_pos = 0
+		if i == 0:
+			print "parse_game_play starts on first line"
+			res = re.search('\(;', self.game_lines[i], 0)
+			assert res != None , "No (; found in %s" % self.game_lines[i]
+			start_pos = res.start()+1
+
 		for line in self.game_lines[i:]:
-			start_pos = 0
 			res = self.reg_bw.search(line,start_pos)
+			start_pos = 0
 			while res:
 				start_pos = res.start()+1
 				print res.group()
@@ -91,6 +102,6 @@ if __name__ == "__main__":   #if it is standalone(./xxx.py), then call main
 	#draw_game(19,[])
 	#draw_game(13,[])
 	#draw_game(9,[])
-	fp = open('test.sgf', 'r')
-	#fp = open('2009-9-29-sai2004-kumano.sgf', 'r')
+	#fp = open('test.sgf', 'r')
+	fp = open('2009-9-29-sai2004-kumano.sgf', 'r')
 	parse_sgf(fp)
