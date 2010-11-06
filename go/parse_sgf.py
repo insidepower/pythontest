@@ -49,7 +49,10 @@ class parse_sgf(object):
 		self.parse_game_info(game_str)
 
 		## parse game play
-		#self.parse_game_play(i)
+		self.parse_game_play(i)
+
+		## free up space
+		del self.game_lines
 
 
 	#------ < parse_game_info > ------
@@ -74,13 +77,20 @@ class parse_sgf(object):
 
 
 	#------ < parse_game_play > ------
-
+	def parse_game_play(self, i):
+		for line in self.game_lines[i:]:
+			start_pos = 0
+			res = self.reg_bw.search(line,start_pos)
+			while res:
+				start_pos = res.start()+1
+				print res.group()
+				res = self.reg_bw.search(line,start_pos)
 
 
 if __name__ == "__main__":   #if it is standalone(./xxx.py), then call main
 	#draw_game(19,[])
 	#draw_game(13,[])
 	#draw_game(9,[])
-	#fp = open('test.sgf', 'r')
-	fp = open('2009-9-29-sai2004-kumano.sgf', 'r')
+	fp = open('test.sgf', 'r')
+	#fp = open('2009-9-29-sai2004-kumano.sgf', 'r')
 	parse_sgf(fp)
