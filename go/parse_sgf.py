@@ -17,6 +17,7 @@ class parse_sgf(object):
 	## class variable
 	depth = 0
 	reg_bw=re.compile(r";(W|B)\[([^\]]*)\]")
+	reg_prop = re.compile('\(;')
 	game_lines = None
 	game_info_dict = {}
 	game_info_key = [	'RU', 'KM', 'PW', 'PB', 'WR',
@@ -31,13 +32,10 @@ class parse_sgf(object):
 
 		## look for the first (main) variation
 		for i, line in enumerate(self.game_lines):
-			result = re.search('\(;', line)
+			result = self.reg_prop.search(line)
 			if result:
 				dbg_p(line[:-1])
-				self.depth += 1
 				break
-
-		assert self.depth != 0, "Error in parsing sgf file, not property (; found"
 
 		## find out the line the game play sequence started
 		for m, line in enumerate(self.game_lines[i:]):
@@ -47,11 +45,18 @@ class parse_sgf(object):
 			else:
 				break
 
+		## check if game play sequence start on the line first property (; start
+		if m > i:
+			## both not on the same line
+			self.depth += 1
+
 		## get game info
 		self.parse_game_info(game_str)
 
 		## parse game play
 		self.parse_game_play(m)
+
+		print self.depth
 
 		## free up space
 		del self.game_lines
@@ -81,20 +86,22 @@ class parse_sgf(object):
 	#------ < parse_game_play > ------
 	def parse_game_play(self, i):
 
-		## if this is the first line, check how many property (; on this line 
-		start_pos = 0
-		if i == 0:
-			print "parse_game_play starts on first line"
-			res = re.search('\(;', self.game_lines[i], 0)
-			assert res != None , "No (; found in %s" % self.game_lines[i]
-			start_pos = res.start()+1
-
 		for line in self.game_lines[i:]:
-			res = self.reg_bw.search(line,start_pos)
 			start_pos = 0
+			prop = self.reg_prop.search(line)
+			if prop:
+				self.depth += 1
+				start_pos = prop.end()
+			res = self.reg_bw.search(line,start_pos)
+
 			while res:
-				start_pos = res.start()+1
 				print res.group()
+				prop = self.reg_prop.search(line, res.end())
+				if prop:
+					self.depth += 1
+					start_pos = prop.end()
+				else:
+					start_pos = start_pos+res.start()+1
 				res = self.reg_bw.search(line,start_pos)
 
 
@@ -102,6 +109,6 @@ if __name__ == "__main__":   #if it is standalone(./xxx.py), then call main
 	#draw_game(19,[])
 	#draw_game(13,[])
 	#draw_game(9,[])
-	#fp = open('test.sgf', 'r')
-	fp = open('2009-9-29-sai2004-kumano.sgf', 'r')
+	fp = open('test.sgf', 'r')
+	#fp = open('2009-9-29-sai2004-kumano.sgf', 'r')
 	parse_sgf(fp)
