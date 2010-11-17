@@ -8,10 +8,9 @@ import re
 import os
 import sys
 from optparse import OptionParser
-#import re
+from execBash import execBash
 
 #----------------- global variable ----------------#
-file_compare_count = 0
 
 #----------------- parseCmd() ----------------#
 ## parse the command line arguments
@@ -26,18 +25,10 @@ def parseCmd():
 	#parse_args(arg) arg (default) = sys.argv[1:]
 	return parser.parse_args()  #options.filename, options.verbose..
 
-#----------------- execBash() ----------------#
-def execBash(cmd):
-	#print cmd
-	p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
-	out = p.stdout.read()
-	#print out
-	return out
-
-
 #----------------- main() ----------------#
 def main():
 	(options, args) = parseCmd()
+	print execBash('echo "testing"')
 
 #----------------- standalone() ----------------#
 ## if standalone, i.e. called directly from shell
