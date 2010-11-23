@@ -15,7 +15,7 @@ def draw_game(size, seq):
 
 class parse_sgf(object):
 	## class variable
-	depth = 0
+	variation = 0
 	reg_bw=re.compile(r";(W|B)\[([^\]]*)\]")
 	reg_prop = re.compile('\(;')
 	game_lines = None
@@ -48,7 +48,7 @@ class parse_sgf(object):
 		## check if game play sequence start on the line first property (; start
 		if m > i:
 			## both not on the same line
-			self.depth += 1
+			self.variation += 1
 
 		## get game info
 		self.parse_game_info(game_str)
@@ -56,7 +56,7 @@ class parse_sgf(object):
 		## parse game play
 		self.parse_game_play(m)
 
-		print self.depth
+		print self.variation
 
 		## free up space
 		del self.game_lines
@@ -90,7 +90,7 @@ class parse_sgf(object):
 			start_pos = 0
 			prop = self.reg_prop.search(line)
 			if prop:
-				self.depth += 1
+				self.variation += 1
 				start_pos = prop.end()
 			res = self.reg_bw.search(line,start_pos)
 
@@ -98,7 +98,7 @@ class parse_sgf(object):
 				print res.group()
 				prop = self.reg_prop.search(line, res.end())
 				if prop:
-					self.depth += 1
+					self.variation += 1
 					start_pos = prop.end()
 				else:
 					start_pos = start_pos+res.start()+1
