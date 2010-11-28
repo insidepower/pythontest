@@ -234,19 +234,21 @@ class parse_sgf(object):
 			while prop:
 				#print "prop0:", prop.group()
 				#print "len=",len(line),"; end=",prop.end()
+				print "var:", self.var
+				print "game_var:", self.game_var
 				if line[prop.start()] == '(':
-					print "prop1:", prop.group()
-					self.game_var.append(
-						[self.var, i+n, prop.start(), None])
-					print "prop_start:", self.prop_start
-					self.prop_start.append([len(self.game_var)-1, self.prop_start[-1][1]])
-					#print "prop1:", prop.start(), ", ", start_pos
+					print "next_var_ready", self.next_var_ready
 					if self.next_var_ready:
 						self.next_var_ready = False
 						self.var += 1
+					print "prop1:", prop.group()
+					self.game_var.append(
+						[self.var, i+n, prop.start(), None])
+					#print "prop_start:", self.prop_start
+					self.prop_start.append([len(self.game_var)-1, self.prop_start[-1][1]])
+					#print "prop1:", prop.start(), ", ", start_pos
 				else: ## match ')'
-					print "match )"
-					print self.prop_start
+					print "match ); prop_start=", self.prop_start
 					my_prop = self.prop_start.pop(-1)
 					self.game_var[my_prop[0]][-1:] = \
 							i+n, prop.start(), my_prop[1]
@@ -269,6 +271,7 @@ if __name__ == "__main__":   #if it is standalone(./xxx.py), then call main
 	#draw_game(19,[])
 	#draw_game(13,[])
 	#draw_game(9,[])
-	fp = open('game2.sgf', 'r')
+	#fp = open('game2.sgf', 'r')
+	fp = open('test.sgf', 'r')
 	#fp = open('2009-9-29-sai2004-kumano.sgf', 'r')
 	parse_sgf(fp)
