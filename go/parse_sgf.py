@@ -246,6 +246,7 @@ class parse_sgf(object):
 						[[self.var], self.prop_start[-1], i+n, prop.start(), None])
 					### update child-parent relationship
 					self.update_var()
+					#self.update_kid()
 					#print "prop_start:", self.prop_start
 					self.prop_start.append(len(self.game_var)-1)
 					#print "prop1:", prop.start(), ", ", start_pos
@@ -276,6 +277,17 @@ class parse_sgf(object):
 			if self.var not in cur:
 				cur.append(self.var)
 			else:
+				break
+
+	#------ < update_kid > ------
+	def update_kid(self):
+		parent = -1
+		kid_index = len(self.game_var)-1
+		while True:
+			parent = self.game_var[parent][1]
+			print "parent:", self.game_var[parent]
+			self.game_var[parent][-1].append(kid_index)
+			if parent == 0:
 				break
 
 if __name__ == "__main__":   #if it is standalone(./xxx.py), then call main
