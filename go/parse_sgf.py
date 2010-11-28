@@ -90,9 +90,9 @@ class parse_sgf(object):
 			else:
 				## handle multiple line commnets
 				#dbg_p2(grp, "self.is_comment=True,", line)
-				ret, end = self.parse_comment_multiline(i, line)
+				ret = self.parse_comment_multiline(i, line)
 				if ret:
-					self.parse_comment_single(i, line[end:])
+					self.parse_comment_single(i, line[ret[1]:])
 			#dbg_p2(grp,"final:", self.comment_line_g)
 
 
