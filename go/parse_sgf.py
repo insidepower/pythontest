@@ -59,8 +59,8 @@ class parse_sgf(object):
 			res = self.reg_prop.search(line)
 			if res:
 				dbg_p("firstline:",line[:-1])
-				self.game_var.append([self.var, i, res.start(), None])
-				self.prop_start.append([len(self.game_var)-1, self.par])
+				self.game_var.append([self.var, [0], i, res.start(), None])
+				self.prop_start.append(len(self.game_var)-1)
 				print "prop_start:*****", self.prop_start
 				break
 
@@ -243,15 +243,14 @@ class parse_sgf(object):
 						self.var += 1
 					print "prop1:", prop.group()
 					self.game_var.append(
-						[self.var, i+n, prop.start(), None])
+						[self.var, [self.prop_start[-1]], i+n, prop.start(), None])
 					#print "prop_start:", self.prop_start
-					self.prop_start.append([len(self.game_var)-1, self.prop_start[-1][1]])
+					self.prop_start.append(len(self.game_var)-1)
 					#print "prop1:", prop.start(), ", ", start_pos
 				else: ## match ')'
 					print "match ); prop_start=", self.prop_start
 					my_prop = self.prop_start.pop(-1)
-					self.game_var[my_prop[0]][-1:] = \
-							i+n, prop.start(), my_prop[1]
+					self.game_var[my_prop][-1:] = i+n, prop.start()
 					self.next_var_ready = True
 				prop = self.reg_prop_se.search(line, prop.end())
 #			res = self.reg_bw.search(line,start_pos)
