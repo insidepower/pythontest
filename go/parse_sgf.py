@@ -28,6 +28,7 @@ class parse_sgf(object):
 	reg_comment_e = re.compile(r"(.?])")
 	comment_line = []
 	comment_line_g = []
+	comment_line_del = []
 	is_comment = False
 
 
@@ -39,6 +40,7 @@ class parse_sgf(object):
 		## parse comment
 		self.parse_comment()
 		self.print_comment()
+		self.remove_comment()
 		self.delete_comment()
 
 		## look for the first (main) variation
@@ -141,8 +143,8 @@ class parse_sgf(object):
 				dbg_p2(grp,self.game_lines[comment[2]][:comment[3]+1])
 				
 
-	#------ < delete_comment > ------
-	def delete_comment(self):
+	#------ < remove_comment > ------
+	def remove_comment(self):
 		for comment in self.comment_line_g:
 			if comment[0]==comment[2]:
 				## comment on single line
@@ -155,9 +157,29 @@ class parse_sgf(object):
 					self.game_lines[comment[0]][:comment[1]+1]
 				self.game_lines[comment[2]] = \
 					self.game_lines[comment[2]][comment[3]+1:]
+				## prepare list of line which contain only comment
+				if comment[1] == 0:
+					## start of comment of first line comment == 0, 
+					## i.e. whole line is comment
+					self.comment_line_del.append(comment[0])
+				if comment[3] == len(self.game_lines[comment[2]]):
+					## length of second line comment end == length of that line
+					self.comment_line_del.append(comment[2])
+		#for line in self.game_lines:
+		#	print line[:-1]
 
-		for game_line in self.game_lines:
-			print game_line[:-1]
+
+	#------ < delete_comment > ------
+	def delete_comment(self):
+		m = 0
+		for i in self.comment_line_del:
+			del self.game_lines[i-m]
+			m +=  1
+		## print remaining lines in game_lines
+		print "start of game === "
+		for line in self.game_lines:
+			print line[:-1]
+		print "end of game === "
 
 	#------ < parse_game_info > ------
 	def parse_game_info(self, game_str):
