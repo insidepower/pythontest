@@ -28,7 +28,7 @@ class parse_sgf(object):
 	reg_comment_e = re.compile(r"(.?])")
 	comment_line = []
 	comment_line_g = []
-	comment_line_del = []
+	game_line_del = []
 	is_comment = False
 
 
@@ -77,9 +77,14 @@ class parse_sgf(object):
 	#------ < parse_comment > ------
 	def parse_comment(self):
 		grp="c"
-		comment_line = [None, None, None, None]
 		for i, line in enumerate(self.game_lines):
 			line = line.rstrip()
+			#print len(line), "line:", line
+			if len(line) == 0:
+				#print "empty line ****** "
+				self.game_line_del.append(i)
+				#print self.game_line_del
+				continue
 			if not (self.is_comment):
 				self.parse_comment_single(i, line)
 			else:
@@ -161,10 +166,10 @@ class parse_sgf(object):
 				if comment[1] == 0:
 					## start of comment of first line comment == 0, 
 					## i.e. whole line is comment
-					self.comment_line_del.append(comment[0])
+					self.game_line_del.append(comment[0])
 				if comment[3] == len(self.game_lines[comment[2]]):
 					## length of second line comment end == length of that line
-					self.comment_line_del.append(comment[2])
+					self.game_line_del.append(comment[2])
 		#for line in self.game_lines:
 		#	print line[:-1]
 
@@ -172,7 +177,8 @@ class parse_sgf(object):
 	#------ < delete_comment > ------
 	def delete_comment(self):
 		m = 0
-		for i in self.comment_line_del:
+		#print "game_line_del:", self.game_line_del
+		for i in sorted(self.game_line_del):
 			del self.game_lines[i-m]
 			m +=  1
 		## print remaining lines in game_lines
