@@ -28,7 +28,7 @@ class parse_sgf(object):
 	next_var_ready = False
 	reg_bw=re.compile(r";(W|B)\[([^\]]*)\]")
 	reg_prop = re.compile('\(;')
-	reg_prop_se = re.compile('(\(;)|\)')
+	reg_prop_se = re.compile('(\(;)|(\)$)')
 	game = []
 	game_lines = None
 	game_info_dict = {}
@@ -61,6 +61,7 @@ class parse_sgf(object):
 				dbg_p("firstline:",line[:-1])
 				self.game_var.append([self.var, i, res.start(), None])
 				self.prop_start.append([len(self.game_var)-1, self.par])
+				print "prop_start:*****", self.prop_start
 				break
 
 		## find out the line the game play sequence started
@@ -229,15 +230,16 @@ class parse_sgf(object):
 		for n, line in enumerate(self.game_lines[i:]):
 			print ""
 			print "line:", line[:-1]
-			start_pos = 0
 			prop = self.reg_prop_se.search(line)
-			if prop:
+			while prop:
+				#print "prop0:", prop.group()
+				#print "len=",len(line),"; end=",prop.end()
 				if line[prop.start()] == '(':
 					print "prop1:", prop.group()
-					start_pos = prop.end()-1
 					self.game_var.append(
 						[self.var, i+n, prop.start(), None])
-					self.prop_start.append([len(self.game_var)-1, self.par])
+					print "prop_start:", self.prop_start
+					self.prop_start.append([len(self.game_var)-1, self.prop_start[-1][1]])
 					#print "prop1:", prop.start(), ", ", start_pos
 					if self.next_var_ready:
 						self.next_var_ready = False
@@ -245,20 +247,22 @@ class parse_sgf(object):
 				else: ## match ')'
 					print "match )"
 					print self.prop_start
-					self.game_var[self.prop_start.pop(-1)[0]][-1:] = \
-							i+n, prop.start()
+					my_prop = self.prop_start.pop(-1)
+					self.game_var[my_prop[0]][-1:] = \
+							i+n, prop.start(), my_prop[1]
 					self.next_var_ready = True
-			res = self.reg_bw.search(line,start_pos)
+				prop = self.reg_prop_se.search(line, prop.end())
+#			res = self.reg_bw.search(line,start_pos)
 
-			while res:
-				print "res:",res.group()
-				prop = self.reg_prop.search(line, res.end()-1)
-				if prop:
-					print "prop2:", prop.group()
-					start_pos = prop.end()-1
-				else:
-					start_pos = res.end()-1
-				res = self.reg_bw.search(line,start_pos)
+#			while res:
+#				print "res:",res.group()
+#				prop = self.reg_prop.search(line, res.end()-1)
+#				if prop:
+#					print "prop2:", prop.group()
+#					start_pos = prop.end()-1
+#				else:
+#					start_pos = res.end()-1
+#				res = self.reg_bw.search(line,start_pos)
 
 
 if __name__ == "__main__":   #if it is standalone(./xxx.py), then call main
