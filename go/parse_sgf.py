@@ -16,9 +16,20 @@ def draw_game(size, seq):
 
 class parse_sgf(object):
 	## class variable
-	variation = 0
+	## game = [ [common variation for all - variant0], [variant1, variant2, ... ]]
+	## game_var = [variation-x, child, line (;, column (;, line ), column )]
+	game_var = []
+	g = 0
+	var = 0
+	## parents' index in game_var
+	par = 0
+	## prop_start store the index of (; in game_var
+	prop_start = []
+	next_var_ready = False
 	reg_bw=re.compile(r";(W|B)\[([^\]]*)\]")
 	reg_prop = re.compile('\(;')
+	reg_prop_se = re.compile('(\(;)|\)')
+	game = []
 	game_lines = None
 	game_info_dict = {}
 	game_info_key = [	'RU', 'KM', 'PW', 'PB', 'WR',
@@ -45,9 +56,11 @@ class parse_sgf(object):
 
 		## look for the first (main) variation
 		for i, line in enumerate(self.game_lines):
-			result = self.reg_prop.search(line)
-			if result:
+			res = self.reg_prop.search(line)
+			if res:
 				dbg_p("firstline:",line[:-1])
+				self.game_var.append([self.var, i, res.start(), None])
+				self.prop_start.append([len(self.game_var)-1, self.par])
 				break
 
 		## find out the line the game play sequence started
@@ -59,17 +72,20 @@ class parse_sgf(object):
 				break
 
 		## check if game play sequence start on the line first property (; start
-		if m > i:
-			## both not on the same line
-			self.variation += 1
+	#	if m > i:
+	#		## both not on the same line
+	#		self.var += 1
 
 		## get game info
-		#self.parse_game_info(game_str)
+		self.parse_game_info(game_str)
 
 		### parse game play
-		#self.parse_game_play(m)
+		self.parse_game_play(m)
 
-		print "variation:", self.variation
+		### print parsed game
+		print "var:", self.var
+		print self.game_var
+		print self.prop_start
 
 		## free up space
 		del self.game_lines
@@ -210,17 +226,28 @@ class parse_sgf(object):
 
 	#------ < parse_game_play > ------
 	def parse_game_play(self, i):
-
-		for line in self.game_lines[i:]:
+		for n, line in enumerate(self.game_lines[i:]):
 			print ""
 			print "line:", line[:-1]
 			start_pos = 0
-			prop = self.reg_prop.search(line)
+			prop = self.reg_prop_se.search(line)
 			if prop:
-				print "prop1:", prop.group()
-				self.variation += 1
-				start_pos = prop.end()-1
-				#print "prop1:", prop.start(), ", ", start_pos
+				if line[prop.start()] == '(':
+					print "prop1:", prop.group()
+					start_pos = prop.end()-1
+					self.game_var.append(
+						[self.var, i+n, prop.start(), None])
+					self.prop_start.append([len(self.game_var)-1, self.par])
+					#print "prop1:", prop.start(), ", ", start_pos
+					if self.next_var_ready:
+						self.next_var_ready = False
+						self.var += 1
+				else: ## match ')'
+					print "match )"
+					print self.prop_start
+					self.game_var[self.prop_start.pop(-1)[0]][-1:] = \
+							i+n, prop.start()
+					self.next_var_ready = True
 			res = self.reg_bw.search(line,start_pos)
 
 			while res:
@@ -228,7 +255,6 @@ class parse_sgf(object):
 				prop = self.reg_prop.search(line, res.end()-1)
 				if prop:
 					print "prop2:", prop.group()
-					self.variation += 1
 					start_pos = prop.end()-1
 				else:
 					start_pos = res.end()-1

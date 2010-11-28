@@ -4,7 +4,8 @@
 debug=True
 # whatever named in the group, the debug msg will be printed
 # c=comment
-group_g = ["c"]
+group_g = []
+#group_g = ["c"]
 
 def dbg_p(*args):
 	if not debug:
