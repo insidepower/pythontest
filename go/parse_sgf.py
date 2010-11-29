@@ -21,6 +21,7 @@ class parse_sgf(object):
 	game_var = []
 	## start_end = [ line (;, column (;, line ), column ) ]
 	start_end = []
+	var_line = []
 	g = 0
 	var = 0
 	## parents' index in game_var
@@ -85,6 +86,7 @@ class parse_sgf(object):
 
 		### parse game play
 		self.parse_game_var(m)
+		self.parse_game_seq()
 
 		### print parsed game
 		print "var:", self.var
@@ -92,6 +94,7 @@ class parse_sgf(object):
 			print "game_var:", self.game_var[i], 
 			print "\t\tstart_end:", line
 		print self.prop_start
+		print self.var_line
 
 		## free up space
 		del self.game_lines
@@ -288,17 +291,28 @@ class parse_sgf(object):
 
 	#------ < parse_game_seq > ------
 	def parse_game_seq(self):
-		res = self.reg_bw.search(line,start_pos)
+		for i, s in enumerate(self.start_end):
+			line_start = s[0]
+			b4_line_end = s[2] - 1
+			## parse first line (start from column s[1])
+			self.var_line.extend(self.parse_game_seq_1line(
+								self.game_lines[line_start][s[1]:]))
+			while line_start < b4_line_end:
+				## parse second line till before last line
+				## start from column 0
+				line_start += 1
+				seq = self.parse_game_seq_1line(self.game_lines[line_start])
+			## parse last line, from column 0 till column s[1]
+			self.parse_game_seq_1line(self.game_lines[line_start][:s[1]])
 
+
+	#------ < parse_game_seq_1line > ------
+	def parse_game_seq_1line(self, line):
+		res = self.reg_bw.search(line)
 		while res:
 			print "res:",res.group()
-			prop = self.reg_prop.search(line, res.end()-1)
-			if prop:
-				print "prop2:", prop.group()
-				start_pos = prop.end()-1
-			else:
-				start_pos = res.end()-1
-			res = self.reg_bw.search(line,start_pos)
+			yield res.group()[1]+res.group()[3:-1]
+			res = self.reg_bw.search(line,res.end())
 
 
 if __name__ == "__main__":   #if it is standalone(./xxx.py), then call main
