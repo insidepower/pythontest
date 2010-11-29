@@ -19,6 +19,8 @@ class parse_sgf(object):
 	## game = [ [common variation for all - variant0], [variant1, variant2, ... ]]
 	## game_var = [variation-x, child, line (;, column (;, line ), column )]
 	game_var = []
+	## start_end = [ line (;, column (;, line ), column ) ]
+	start_end = []
 	g = 0
 	var = 0
 	## parents' index in game_var
@@ -60,6 +62,7 @@ class parse_sgf(object):
 			if res:
 				dbg_p("firstline:",line[:-1])
 				self.game_var.append([[self.var], 0, i, res.start(), None])
+				self.start_end.append([i,res.start(), None])
 				self.prop_start.append(len(self.game_var)-1)
 				print "prop_start:*****", self.prop_start
 				break
@@ -81,11 +84,14 @@ class parse_sgf(object):
 		self.parse_game_info(game_str)
 
 		### parse game play
-		self.parse_game_play(m)
+		self.parse_game_var(m)
 
 		### print parsed game
 		print "var:", self.var
-		print self.game_var
+		for line in self.game_var:
+			print line
+		for i, line in enumerate(self.start_end):
+			print self.game_var[i], line
 		print self.prop_start
 
 		## free up space
@@ -225,8 +231,8 @@ class parse_sgf(object):
 		#print self.game_info_dict
 
 
-	#------ < parse_game_play > ------
-	def parse_game_play(self, i):
+	#------ < parse_game_var > ------
+	def parse_game_var(self, i):
 		for n, line in enumerate(self.game_lines[i:]):
 			print ""
 			print "line:", line[:-1]
@@ -244,6 +250,7 @@ class parse_sgf(object):
 					print "prop1:", prop.group()
 					self.game_var.append(
 						[[self.var], self.prop_start[-1], i+n, prop.start(), None])
+					self.start_end.append([i+n, prop.start(), None])
 					### update child-parent relationship
 					self.update_var()
 					#self.update_kid()
@@ -254,19 +261,9 @@ class parse_sgf(object):
 					print "match ); prop_start=", self.prop_start
 					my_prop = self.prop_start.pop(-1)
 					self.game_var[my_prop][-1:] = i+n, prop.start()
+					self.start_end[my_prop][-1:] = i+n, prop.start()
 					self.next_var_ready = True
 				prop = self.reg_prop_se.search(line, prop.end())
-#			res = self.reg_bw.search(line,start_pos)
-
-#			while res:
-#				print "res:",res.group()
-#				prop = self.reg_prop.search(line, res.end()-1)
-#				if prop:
-#					print "prop2:", prop.group()
-#					start_pos = prop.end()-1
-#				else:
-#					start_pos = res.end()-1
-#				res = self.reg_bw.search(line,start_pos)
 
 	#------ < update_var > ------
 	def update_var(self):
@@ -289,6 +286,21 @@ class parse_sgf(object):
 			self.game_var[parent][-1].append(kid_index)
 			if parent == 0:
 				break
+
+	#------ < parse_game_seq > ------
+	def parse_game_seq(self):
+		res = self.reg_bw.search(line,start_pos)
+
+		while res:
+			print "res:",res.group()
+			prop = self.reg_prop.search(line, res.end()-1)
+			if prop:
+				print "prop2:", prop.group()
+				start_pos = prop.end()-1
+			else:
+				start_pos = res.end()-1
+			res = self.reg_bw.search(line,start_pos)
+
 
 if __name__ == "__main__":   #if it is standalone(./xxx.py), then call main
 	#draw_game(19,[])
