@@ -65,7 +65,7 @@ class parse_sgf(object):
 				self.game_var.append([[self.var], 0])
 				self.start_end.append([i,res.start(), None])
 				self.prop_start.append(len(self.game_var)-1)
-				print "prop_start:*****", self.prop_start
+				#print "prop_start:*****", self.prop_start
 				break
 
 		## find out the line the game play sequence started
@@ -266,6 +266,9 @@ class parse_sgf(object):
 					self.start_end[my_prop][-1:] = i+n, prop.start()
 					self.next_var_ready = True
 				prop = self.reg_prop_se.search(line, prop.end())
+		## update first var, as it will end once the second (; is found
+		self.start_end[0][2] = self.start_end[1][0]
+		self.start_end[0][3] = self.start_end[1][1]-1
 
 	#------ < update_var > ------
 	def update_var(self):
@@ -294,25 +297,35 @@ class parse_sgf(object):
 		for i, s in enumerate(self.start_end):
 			line_start = s[0]
 			b4_line_end = s[2] - 1
+			seq = []
 			## parse first line (start from column s[1])
-			self.var_line.extend(self.parse_game_seq_1line(
-								self.game_lines[line_start][s[1]:]))
+			seq = self.parse_game_seq_1line(
+								self.game_lines[line_start][s[1]:])
+			print "start:", self.game_lines[line_start][s[1]:]
+			if seq: self.var_line.append(seq)
+			#print "b4", self.var_line
 			while line_start < b4_line_end:
 				## parse second line till before last line
 				## start from column 0
 				line_start += 1
 				seq = self.parse_game_seq_1line(self.game_lines[line_start])
+				print "middle:", self.game_lines[line_start]
+				if seq: self.var_line.extend([seq])
 			## parse last line, from column 0 till column s[1]
 			self.parse_game_seq_1line(self.game_lines[line_start][:s[1]])
+			print "end:", self.game_lines[line_start][:s[1]]
 
 
 	#------ < parse_game_seq_1line > ------
 	def parse_game_seq_1line(self, line):
+		my_var_line = []
 		res = self.reg_bw.search(line)
 		while res:
 			print "res:",res.group()
-			yield res.group()[1]+res.group()[3:-1]
+			my_var_line.extend([res.group()[1]+res.group()[3:-1]])
 			res = self.reg_bw.search(line,res.end())
+		print "my_var_line", my_var_line
+		return my_var_line
 
 
 if __name__ == "__main__":   #if it is standalone(./xxx.py), then call main
