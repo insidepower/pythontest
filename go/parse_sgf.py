@@ -61,7 +61,7 @@ class parse_sgf(object):
 			res = self.reg_prop.search(line)
 			if res:
 				dbg_p("firstline:",line[:-1])
-				self.game_var.append([[self.var], 0, i, res.start(), None])
+				self.game_var.append([[self.var], 0])
 				self.start_end.append([i,res.start(), None])
 				self.prop_start.append(len(self.game_var)-1)
 				print "prop_start:*****", self.prop_start
@@ -88,10 +88,9 @@ class parse_sgf(object):
 
 		### print parsed game
 		print "var:", self.var
-		for line in self.game_var:
-			print line
 		for i, line in enumerate(self.start_end):
-			print self.game_var[i], line
+			print "game_var:", self.game_var[i], 
+			print "\t\tstart_end:", line
 		print self.prop_start
 
 		## free up space
@@ -249,7 +248,7 @@ class parse_sgf(object):
 						self.var += 1
 					print "prop1:", prop.group()
 					self.game_var.append(
-						[[self.var], self.prop_start[-1], i+n, prop.start(), None])
+						[[self.var], self.prop_start[-1]])
 					self.start_end.append([i+n, prop.start(), None])
 					### update child-parent relationship
 					self.update_var()
