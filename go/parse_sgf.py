@@ -171,7 +171,7 @@ class parse_sgf(object):
 				## comments on multiple line
 				dbg_p2(grp,self.game_lines[comment[0]][comment[1]:])
 				dbg_p2(grp,self.game_lines[comment[2]][:comment[3]+1])
-				
+
 
 	#------ < remove_comment > ------
 	def remove_comment(self):
@@ -189,7 +189,7 @@ class parse_sgf(object):
 					self.game_lines[comment[2]][comment[3]+1:]
 				## prepare list of line which contain only comment
 				if comment[1] == 0:
-					## start of comment of first line comment == 0, 
+					## start of comment of first line comment == 0,
 					## i.e. whole line is comment
 					self.game_line_del.append(comment[0])
 				if comment[3] == len(self.game_lines[comment[2]]):
@@ -249,6 +249,8 @@ class parse_sgf(object):
 					if self.next_var_ready:
 						self.next_var_ready = False
 						self.var += 1
+					else:
+						self.start_end[-1][-1:] = i+n, prop.start()
 					print "prop1:", prop.group()
 					self.game_var.append(
 						[[self.var], self.prop_start[-1]])
@@ -257,14 +259,22 @@ class parse_sgf(object):
 					self.update_var()
 					#self.update_kid()
 					#print "prop_start:", self.prop_start
-					self.prop_start.append(len(self.game_var)-1)
+					#self.prop_start.append(len(self.game_var)-1)
 					#print "prop1:", prop.start(), ", ", start_pos
 				else: ## match ')'
 					print "match ); prop_start=", self.prop_start
-					my_prop = self.prop_start.pop(-1)
-					self.game_var[my_prop][-1:] = i+n, prop.start()
-					self.start_end[my_prop][-1:] = i+n, prop.start()
-					self.next_var_ready = True
+					if not self.next_var_ready:
+						## this is a sub single variation (;...)
+						## with no other variations, e.g. (;..(;...))
+						## for sub single variation, we will mark the end point
+						## of previous (; here as we found the ')'
+						## for sub multi variation, the end point of previous (;
+						## will be the immediate next (;
+						## e.g. (;..var1..(;..var2..(;..var3..)))
+						#my_prop = self.prop_start.pop(-1)
+						self.game_var[-1][-1:] = i+n, prop.start()
+						self.start_end[-1][-1:] = i+n, prop.start()
+						self.next_var_ready = True
 				prop = self.reg_prop_se.search(line, prop.end())
 		## update first var, as it will end once the second (; is found
 		self.start_end[0][2] = self.start_end[1][0]
