@@ -27,9 +27,11 @@ def parseCmd():
 def main():
 	(options, args) = parseCmd()
 	for i in range(50):
-		if execBash('DISPLAY=localhost:%d && xclock' % (i,))[1]==0:
+		execBash('DISPLAY=localhost:%d'% (i,))
+		if execBash('xclock')[1]==0:
+			print("export DISPLAY=localhost:%d" % i)
 			execBash ('export DISPLAY=localhost:%d' % i)
-			break
+			sys.exit(0)
 
 #----------------- standalone() ----------------#
 ## if standalone, i.e. called directly from shell
