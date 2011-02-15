@@ -25,10 +25,13 @@ class Commit(Command):
 	helpUsage = ""
 	current_dir=""
 	git_current_branch=""
+	commitlog_remote=""
+	default_branch=""
 	commit_file="commit.log"
 	commit_dir="commitlog"
+	tmp_commit_file="commitmsg.tmp"
 	## hold added project name
-	proj_name=None
+	proj_name=[]
 
 #----------------- parseCmd() ----------------#
 ## parse the command line arguments
@@ -54,13 +57,13 @@ class Commit(Command):
 		#return parser.parse_args()  #options.filename, options.verbose..
 
 #----------------- execBash() ----------------#
-	def execBash(self, cmd):
+	def execBash(self, cmd, is_suppress=False):
 		#print cmd
 		p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
 		#(stdoutdata, stderrdata) = p.communicate()
 		stdoutdata = p.communicate()[0]
 		p.poll()
-		if p.returncode != 0:
+		if p.returncode != 0 and (not is_suppress):
 			print ("\033[1;31mWarning!! command (%s) not ended properly."
 					"exit status = %d\033[0m" %(cmd, p.returncode))
 		#out = p.stdout.read()
@@ -80,7 +83,8 @@ class Commit(Command):
 			sys.exit(2)
 		print ("\nFetching from server and merge into current branch %s..."
 				% self.git_current_branch)
-		(out, status)=self.execBash("git pull conti_dev %s" % self.git_current_branch)
+		(out, status)=self.execBash("git pull %s %s" %
+							(self.commitlog_remote, self.git_current_branch))
 		if status != 0:
 			print out
 			print("\033[1;31mWarning!! Not able to get the update from "
@@ -98,7 +102,8 @@ class Commit(Command):
 			proj_path=os.path.join(ori_dir, proj)
 			os.chdir(proj_path)
 			out1=self.execBash("echo 'now at ' `pwd`")[0]
-			cmd = "git log conti_dev/nissan_ev_dev..nissan_ev_dev "
+			cmd = "git log %s/%s..%s " % (self.commitlog_remote,
+								self.default_branch, self.default_branch)
 			cmd = cmd +"--pretty=oneline| wc -l"
 			log_diff=int(self.execBash(cmd)[0])
 			#print out1, log_diff
@@ -108,7 +113,7 @@ class Commit(Command):
 				sys.exit(2)
 
 #----------------- commit_log() ----------------#
-	def commit_log(self, author, msg, top_cmd):
+	def commit_log(self, author, msg):
 		## retain current directory before proceeding
 		self.current_dir=os.getcwd()
 
@@ -134,14 +139,19 @@ class Commit(Command):
 					os.chdir(self.current_dir)
 					sys.exit(2)
 			else:
-				## commit_dir not exists, quit
-				print("\033[1;31mWarning!! Directory %s does not exist! "
-						"Have you updated your manifest? You need to be at "
-						"top (android) directory or inside commitlog "
-						"directory to execute 'repo commit'. "
-						"Application Ended.\033[0m " %(self.commit_dir))
-				os.chdir(self.current_dir)
-				sys.exit(2)
+				if os.path.isdir(self.manifest.topdir+'/commitlog'):
+					os.chdir(self.manifest.topdir+'/commitlog')
+					print 'we are at ',os.getcwd()
+					self.get_server_update()
+				else:
+					## commit_dir not exists, quit
+					print("\033[1;31mWarning!! Directory %s does not exist! "
+							"Have you updated your manifest? You need to be at "
+							"top (android) directory or inside commitlog "
+							"directory to execute 'repo commit'. "
+							"Application Ended.\033[0m " %(self.commit_dir))
+					os.chdir(self.current_dir)
+					sys.exit(2)
 		else:
 			## we are inside commitlog directory
 			## go to top directory
@@ -164,43 +174,36 @@ class Commit(Command):
 			#	sys.exit(2)
 
 		## get update from server
+		#print "b4: ", os.getcwd() 
 		self.get_server_update()
 		# append the details to commit log
+		fp = open(self.commit_file, "r+")
+		oldcontent = fp.read()
 		log_date=self.execBash("date")[0]
-		log_msg="\nAuthor: " +author+ "\nDate  : " +log_date+"\n"+msg+ "-"*120
-		cmd=("mv -f %s %s.tmp && echo '%s' > %s"
-				% (self.commit_file, self.commit_file, log_msg, self.commit_file))
-		status = self.execBash(cmd)[1]
-		if status != 0:
-			self.execBash("rm -f %s" % self.commit_file)
-			print("\033[1;31mWarning!! Failed to execute %s."
-					"Application Ended (%d)\033[0m" % (cmd, status))
-			sys.exit(2)
-		cmd="cat %s.tmp >> %s" % (self.commit_file, self.commit_file)
-		status = self.execBash(cmd)[1]
-		if status != 0:
-			self.execBash("rm -f %s" % self.commit_file)
-			print("\033[1;31mWarning!! Failed to execute %s."
-					"Application Ended (%d)\033[0m" % (cmd, status))
-			sys.exit(2)
+		log_msg="\nAuthor: " +author+ "\nDate  : " +log_date+"\n"+msg+ "-"*120 +"\n"
+		fp.seek(0)
+		fp.write(log_msg+oldcontent)
+		fp.close()
+
+		## write commit message to file so as to avoid problem like unclosed ' and " in bash
+		f_tmp = open(self.tmp_commit_file, "w")
+		f_tmp.write(msg)
+		f_tmp.close()
 
 		## run git commit
-		(out, status)=self.execBash(top_cmd)
+		#cmd = 'git commit -am "%s"' % (commit_msg_format)
+		cmd = 'git commit -a -F %s' % (self.tmp_commit_file)
+		(out, status)=self.execBash(cmd)
 		print ("\n%s" % out)
 
-		if status==0:
-			# commit successfully, remove the temporary file
-			self.execBash("rm -f %s.tmp" % (self.commit_file))
-		else:
-			# not commit, revert change to commit_file
-			self.execBash("rm -f %s && mv %s.tmp %s"
-					%(self.commit_file, self.commit_file, self.commit_file))
+		self.execBash("git checkout -f HEAD %s" % (self.commit_file))
+		self.execBash("rm -rf %s" % self.tmp_commit_file)
 
 		#out=self.execBash("git log -n1")[0]
 		#print("show the last commit")
 		#print out
 		## go back to where we from
-		self.execBash("git push conti_dev")
+		self.execBash("git push %s" % self.commitlog_remote)
 		os.chdir(self.current_dir)
 
 
@@ -209,6 +212,17 @@ class Commit(Command):
 		## testing
 		#rp = self.manifest.repoProject
 		#print "rp is %s" % rp.revisionExpr
+		#print "self.manifest = ", dir(self.manifest)
+		#print "self.manifest.remote = ", self.manifest.remotes
+		#print "self.manifest.topdir = ", self.manifest.topdir
+		#print "self.manifest.branch = ", self.manifest.branch
+		#commitlog_project = self.GetProjects(['commitlog'])[0]
+		#self.commitlog_remote = commitlog_project.remote.name
+		#self.default_branch=commitlog_project.revisionExpr
+		self.commitlog_remote = str(self.manifest.remotes.keys()[0])
+		self.default_branch = self.manifest.branch
+		#print "self.default_branch=", self.default_branch
+		#print "self.commitlog_remote",self.commitlog_remote
 
 		#(options, args) = parseCmd()
 		commit_msg=""
@@ -224,8 +238,8 @@ class Commit(Command):
 		if options.author:
 			author=options.author
 
-		cmd=('repo forall -p -c git log --since="%s" --author="%s" --pretty=oneline nissan_ev_dev'
-				% (duration, author))
+		cmd=('repo forall -p -c git log --since="%s" --author="%s" --pretty=oneline %s'
+				% (duration, author, self.default_branch))
 		if options.searchstr:
 			cmd=cmd + ' --grep="%s"' % (options.searchstr)
 
@@ -233,19 +247,35 @@ class Commit(Command):
 			cmd=cmd + ' %s' %(options.extra_params)
 
 		## look for sub-project which is most likely commited by user recently
-		print("Search for conti_dev branch's commits since %s from %s" %(duration, author))
+		print("Search for %s branch's commits since %s from %s" 
+				%(self.default_branch, duration, author))
 		#print cmd
-		log_result=self.execBash(cmd)[0].splitlines()
+		log_result=self.execBash(cmd, True)[0].splitlines()
 		#print log_result
 		for i, line in enumerate(log_result):
 			#print line
 			proj_name=re.match(r"project (.*)/", line)
-			if proj_name:
+			if proj_name and (proj_name.group(1)!="commitlog"):
 				## recursively get all commits from one project
+				#my_default_branch = self.GetProjects([proj_name.group(1)])[0].__dict__
+				cmd = "git branch | sed -n 's#\* \(.*\)#\\1#p'"
+				my_path = (self.manifest.topdir + "/%s") % proj_name.group(1)
+				#print "my_path = ", my_path
+				my_default_branch = subprocess.Popen(cmd, shell=True,
+						stdout=subprocess.PIPE, cwd=my_path).communicate()[0][:-1]
+
+				#print "my_default_branch =%s--" % my_default_branch
+				if my_default_branch != self.default_branch:
+					print ("\033[1;31mWarning!! project %s need to be in %s, but branch %s."
+								"Please do 'repo checkout %s' before repo commit."
+								"This project will be ignored by repo commit. \033[0m"
+								%(proj_name.group(1), self.default_branch,
+									my_default_branch, self.default_branch))
+					continue
 				for commit_id in log_result[i+1:]:
 					## check if there is anymore commit under the same project
 					if (re.match(r"[0-9a-z]{40}", commit_id)):
-						prompt_msg = ("\033[1;33madd %s: log=%s \033[0m(y/n)? "
+						prompt_msg = ("\033[1;33;40madd %s: log=%s \033[0m(y/n)? "
 										%(proj_name.group(1), commit_id[:120]))
 						shouldAdd=raw_input(prompt_msg)
 						if 'y' == shouldAdd.lower():
@@ -272,6 +302,7 @@ class Commit(Command):
 				line1_msg=raw_input("\nPlease input your first line summary below:\n")
 				commit_msg_format = "%s\n\n%s" % (line1_msg, commit_msg)
 
+
 			# get the list of files changes too
 			#files_changes=('files changes to be added:\n\033[1;32m%s\033[0m'
 			#				% self.execBash("git ls-files -m"))
@@ -279,14 +310,16 @@ class Commit(Command):
 			#								stdout=subprocess.PIPE).stdout.read()
 			#git_status='git status: \n' + git_status
 			git_status=""
-			cmd = "git commit -am '%s'" % (commit_msg_format)
 			msg_ready=("\n%s\nCommit Message:\n%s\n%s%s\n%s\nReady to commit: (y/n)? "
 							#%("-"*120 ,commit_msg_format, "-"*120, files_changes))
 							%("-"*120 , "-"*120 ,commit_msg_format, "-"*120, git_status))
 			readyToCommit=raw_input(msg_ready)
 			if "y"==readyToCommit.lower():
 				## commit the log
-				self.commit_log(author, commit_msg_format, cmd)
+				self.commit_log(author, commit_msg_format)
+			else:
+				print "\nrepo commit stopped by user.\n"
+				sys.exit(0)
 		else:
 			print ("\n\033[1;31mNo other commits found, you may use --since to expand "
 					"the search duration.\033[0m")
