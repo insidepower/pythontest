@@ -29,6 +29,7 @@ def parseCmd():
 def main():
 	(options, args) = parseCmd()
 	print execBash('echo "testing"')
+	print execBash('echo "testing"')[0]
 
 #----------------- standalone() ----------------#
 ## if standalone, i.e. called directly from shell
