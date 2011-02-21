@@ -45,10 +45,14 @@ def execBash(cmd, is_suppress=False):
 #----------------- class ExtractTime() ----------------#
 class ExtractTime(object):
 	filename="Probe-ttprb00017*bin"
-	parsed_filename = None
+	file_to_be_parsed = None
 	filelist = None
 	is_zip = False
 	is_not_parsed = False
+	firstline=[]
+	wrongline=[]
+	CORRECT = True
+	WRONG = False
 
 	def __init__(self, fn=None, is_zip=False):
 		print "ExtractTime: init"
@@ -65,23 +69,40 @@ class ExtractTime(object):
 			print ("\033[1;31mWarning!! %s not ended with gz\033[0m" % file)
 		#print os.getcwd()
 		if execBash("gunzip -f %s" % file)[1] == 0:
-			self.parsed_filename = "%s" % basename
+			self.file_to_be_parsed = "%s" % basename
 	
 	def parsefile(self, file):
 		print "parsing file: ", file
 		print execBash("./searchgramar signals_ver4.3.1.xml %s" % file)
 		self.parsed_filename = "%s_parsed_output.txt" % file
+	
+	def compareFirstTime(self):
+		result = self.CORRECT
+		if len(self.firstline) != 2:
+			mylen = len(self.firstline)
+			print ("\033[1;31mWarning!! length of self.firstline is %d\033[0m " % mylen)
+			print "self.firstline: ", self.firstline
+			return self.WRONG
+		if self.firstline[0]!=self.firstline[1]:
+			print ("\033[1;31mWarning!! first line time stamp are "
+			"different: \n%s\n%s\033[0m" % (self.firstline[0], self.firstline[1]))
+			result = self.WRONG
+		return result
 		
 	def extractContent(self, file):
 		#print "\n\n########## start parsing #########"
 		print "\n\n"
 		print "filename: ", file
 		fp = open(file)
-		for i, line in enumerate(fp):
+		is_first_line = False
+		for line in fp:
 			#print line
 			res = re.match(" TimeStamp.*", line)
 			if res:
 				print res.group(0)
+				if is_first_line:
+					self.firstline.append(res.group(0))
+					is_first_line = False
 				continue
 
 			## looking for indicative header
@@ -90,7 +111,11 @@ class ExtractTime(object):
 				print "*"*50
 				print res.group(0)
 				print "*"*50
+				is_first_line = True
 				continue
+		if self.compareFirstTime()==self.WRONG:
+			self.wrongline.append(self.firstline)
+		del self.firstline[:]
 		#print "########## end of parsing #########\n\n"
 		print "\n\n"
 			
@@ -102,9 +127,10 @@ class ExtractTime(object):
 		print self.filelist
 
 		for file in self.filelist:
+			self.file_to_be_parsed = file
 			self.parsed_filename = file
 			if self.is_zip: self.gunzipfile(file)
-			if self.is_not_parsed: self.parsefile(self.parsed_filename)
+			if self.is_not_parsed: self.parsefile(self.file_to_be_parsed)
 			self.extractContent(self.parsed_filename)
 
 
@@ -122,14 +148,18 @@ if __name__ == "__main__":   #if it is standalone(./xxx.py), then call main
 	else:
 		log = ExtractTime()
 	
+	log.filename="Probe-ttprb00017*bin_parsed_output.txt"
+
+	if options.is_not_parsed:
+		log.is_not_parsed = True
+		log.filename="Probe-ttprb00017*bin"
+
 	## if the file is zipped, it need to be parsed as well
 	if options.is_zip:
 		log.is_zip = True
 		log.is_not_parsed = True
 		log.filename="Probe-ttprb00017*bin.gz"
 	
-	if options.is_not_parsed:
-		log.is_not_parsed = True
 
 	print " -- log's attribute -- "
 	print log.__dict__
