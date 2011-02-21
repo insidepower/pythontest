@@ -11,6 +11,12 @@ from optparse import OptionParser
 from execBash import execBash
 
 #----------------- global variable ----------------#
+usage = \
+'''usage: ./get_adb_files.py <start-sequence> <end-sequence>
+
+example: 
+./get_adb_files.py 1 10
+'''
 
 #----------------- parseCmd() ----------------#
 ## parse the command line arguments
@@ -30,6 +36,13 @@ def main():
 	(options, args) = parseCmd()
 	print execBash('echo "testing"')
 	print execBash('echo "testing"')[0]
+
+	if options.filename:
+		print "-f from user: ", options.filename
+
+	if len(args):
+		## note ./app_name --option1 xxx-option-value arg0 arg1
+		print "args: ", args
 
 #----------------- standalone() ----------------#
 ## if standalone, i.e. called directly from shell
