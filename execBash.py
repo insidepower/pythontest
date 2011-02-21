@@ -8,8 +8,9 @@ import subprocess
 #	out = p.stdout.read()
 #	#print out
 #	return out
-def execBash(cmd, is_suppress=False):
-	#print cmd
+def execBash(cmd, is_suppress=False, is_print_cmd=False):
+	if is_print_cmd:
+		print cmd
 	p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
 	#(stdoutdata, stderrdata) = p.communicate()
 	stdoutdata = p.communicate()[0]
