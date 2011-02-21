@@ -63,7 +63,7 @@ class ExtractTime(object):
 		basename, ext = os.path.splitext(file)
 		if ext!=".gz":
 			print ("\033[1;31mWarning!! %s not ended with gz\033[0m" % file)
-		print os.getcwd()
+		#print os.getcwd()
 		if execBash("gunzip -f %s" % file)[1] == 0:
 			self.parsed_filename = "%s" % basename
 	
@@ -73,13 +73,28 @@ class ExtractTime(object):
 		self.parsed_filename = "%s_parsed_output.txt" % file
 		
 	def extractContent(self, file):
+		#print "\n\n########## start parsing #########"
+		print "\n\n"
 		print "filename: ", file
-		for line in file:
-			## looking for indicative header
-			res = re.match(" DATA TYPE -- INDICATIVE", line)
+		fp = open(file)
+		for i, line in enumerate(fp):
+			#print line
+			res = re.match(" TimeStamp.*", line)
 			if res:
-				print res.group[0]
-				break
+				print res.group(0)
+				continue
+
+			## looking for indicative header
+			res = re.match(" DATA TYPE.*", line)
+			if res:
+				print "*"*50
+				print res.group(0)
+				print "*"*50
+				continue
+		#print "########## end of parsing #########\n\n"
+		print "\n\n"
+			
+
 	
 	def execute(self):
 		print "Executing..."
