@@ -11,6 +11,7 @@ import subprocess
 import re
 import os
 import sys
+import calendar
 from optparse import OptionParser
 import glob
 
@@ -45,14 +46,18 @@ def execBash(cmd, is_suppress=False):
 #----------------- class WrongLine() ----------------#
 class WrongLine(object):
 	filename = None
-	info = []
+	info = None
 
 	def __init__(self, filename, reason, line1, line2):
-		print "WrongLine: init"
+		print "WrongLine: init - ", filename
+		print "length of info = ", self.info
+		self.info = []
 		self.filename=filename
 		self.info.append([reason, line1, line2])
 	
 	def add_wrongline(self, reason, line1, line2):
+		print "add_wrongline: ", self.filename
+		print "length of info = ", self.info
 		self.info.append([reason, line1, line2])
 
 	def print_me(self):
@@ -83,6 +88,18 @@ class ExtractTime(object):
 	WRONG = False
 	wl = None
 	current_file = None
+	day1 = None
+	mon1 = None
+	year1 = None
+	hr1 = None
+	min1 = None
+	sec1 = None
+	day2 = None
+	mon2 = None
+	year2 = None
+	hr2 = None
+	min2 = None
+	sec2 = None
 
 	def __init__(self, fn=None, is_zip=False):
 		print "ExtractTime: init"
@@ -132,6 +149,81 @@ class ExtractTime(object):
 			"different: \n%s\n%s\033[0m" % (self.linepair[0][i], self.linepair[1][i]))
 			result = self.WRONG
 		return result
+
+	def comparetime(self):
+		min = self.min1
+		hr = self.hr1
+		sec=(self.sec1+1)%60
+		day = self.day1
+		mon = self.mon1
+		year = self.year1
+		if sec == 0:
+			min = (min+1)%60
+			if min == 0:
+				hr = (hr+1)%24
+				if hr == 0:
+					max_day = calendar.monthrange(self.year1, self.mon1)[1]
+					day = (day+1)% max_day
+					if day == 0:
+						mon = (mon+1)%12
+						## month = 1-12
+						if mon == 1:
+							year = year+1
+		if sec!=self.sec2:
+			return self.WRONG
+		else:
+			## second is continuous
+			if(min!=self.min2 or hr!=self.hr2):
+				return self.WRONG
+			elif (day!=self.day2 or mon!=self.mon2 or year!=self.year2):
+				return self.WRONG
+			else:
+				return self.CORRECT
+
+	## compare_incremental_time: check for the continuous time stamp
+	def compare_incremental_time(self):
+		## we just check for indicative for the continuous time stamp
+		## as in the comparelinepair we have compared both indicative and 
+		## engineering data to make sure they are same
+		prevline = self.linepair[0][0]
+		print prevline
+		self.day1 = int(prevline[36:38])
+		self.mon1 = int(prevline[39:41])
+		self.year1 = int(prevline[42:46])
+		print "dd:mm:yyyy = ", self.day1, self.mon1, self.year1
+
+		self.hr1 = int(prevline[66:68])
+		self.min1 = int(prevline[69:71])
+		self.sec1 = int(prevline[72:74])
+		print "self.hr:self.min:self.sec = ", self.hr1, self.min1, self.sec1
+
+		for i, line in enumerate(self.linepair[0][1:]):
+			self.day2 = int(line[36:38])
+			self.mon2 = int(line[39:41])
+			self.year2 = int(line[42:46])
+			print "dd:mm:yyyy", self.day2, self.mon2, self.year2
+
+			self.hr2 = int(line[66:68])
+			self.min2 = int(line[69:71])
+			self.sec2 = int(line[72:74])
+			print "self.hr:self.min:self.sec = ", self.hr2, self.min2, self.sec2
+
+			if self.comparetime()==self.WRONG:
+				reason = "time is not continuous"
+				if not self.wl:
+					self.wl = WrongLine(self.current_file, reason, prevline, line)
+				else:
+					self.wl.add_wrongline(reason, prevline, line);
+				print ("\033[1;31mWarning!! line pair time stamp are "
+				"not continuous: \n%s\n%s\033[0m" % (prevline, line))
+
+			self.day1 = self.day2;
+			self.mon1 = self.mon2;
+			self.year1 = self.year2;
+			self.hr1 = self.hr2;
+			self.min1 = self.min2;
+			self.sec1 = self.sec2;
+
 		
 	def extractContent(self, file):
 		#print "\n\n########## start parsing #########"
@@ -177,6 +269,8 @@ class ExtractTime(object):
 
 		for i in range(0, len(self.linepair[0])):
 			self.comparelinepair(i)
+
+		self.compare_incremental_time()
 
 		if self.wl:
 			print "adding wl..."
