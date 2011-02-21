@@ -42,6 +42,32 @@ def execBash(cmd, is_suppress=False):
 	#print out
 	return (stdoutdata, p.returncode)
 
+#----------------- class WrongLine() ----------------#
+class WrongLine(object):
+	filename = None
+	info = []
+
+	def __init__(self, filename, reason, line1, line2):
+		print "WrongLine: init"
+		self.filename=filename
+		self.info.append([reason, line1, line2])
+	
+	def add_wrongline(self, reason, line1, line2):
+		self.info.append([reason, line1, line2])
+
+	def print_me(self):
+		#print "~"*100
+		i = 1
+		print "filename: ", self.filename
+		print "total possible error: ", len(self.info)
+		for line in self.info:
+			print ("%d: reason: %s" % (i, line[0]))
+			print "line1: ", line[1]
+			print "line2: ", line[2]
+			i += 1
+		print ""
+		#print "~"*100
+
 #----------------- class ExtractTime() ----------------#
 class ExtractTime(object):
 	filename="Probe-ttprb00017*bin"
@@ -95,6 +121,8 @@ class ExtractTime(object):
 		print "filename: ", file
 		fp = open(file)
 		is_first_line = False
+		wl = None
+
 		for line in fp:
 			#print line
 			res = re.match(" TimeStamp.*", line)
@@ -113,8 +141,14 @@ class ExtractTime(object):
 				print "*"*50
 				is_first_line = True
 				continue
+
 		if self.compareFirstTime()==self.WRONG:
-			self.wrongline.append(self.firstline)
+			print "line is wrong 1"
+			if not wl:
+				wl = WrongLine(file, "firstline", self.firstline[0], self.firstline[1])
+			else:
+				wl.add_wrongline("firstline", self.firstline[0], self.firstline[1])
+			self.wrongline.append(wl)
 		del self.firstline[:]
 		#print "########## end of parsing #########\n\n"
 		print "\n\n"
@@ -132,6 +166,11 @@ class ExtractTime(object):
 			if self.is_zip: self.gunzipfile(file)
 			if self.is_not_parsed: self.parsefile(self.file_to_be_parsed)
 			self.extractContent(self.parsed_filename)
+
+		if self.wrongline:
+			print "-- line that could be wrong --"
+			for wl in self.wrongline:
+				wl.print_me()
 
 
 if __name__ == "__main__":   #if it is standalone(./xxx.py), then call main
