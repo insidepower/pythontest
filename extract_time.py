@@ -75,10 +75,14 @@ class ExtractTime(object):
 	filelist = None
 	is_zip = False
 	is_not_parsed = False
+	linepair=[[],[]]
+	secondpair=[]
 	firstline=[]
 	wrongline=[]
 	CORRECT = True
 	WRONG = False
+	wl = None
+	current_file = None
 
 	def __init__(self, fn=None, is_zip=False):
 		print "ExtractTime: init"
@@ -114,6 +118,20 @@ class ExtractTime(object):
 			"different: \n%s\n%s\033[0m" % (self.firstline[0], self.firstline[1]))
 			result = self.WRONG
 		return result
+
+	def comparelinepair(self, i):
+		result = self.CORRECT
+		if self.linepair[0][i][36:]!=self.linepair[1][i][36:]:
+			reason = "indicative and engineering pair are different" 
+			if not self.wl:
+				self.wl = WrongLine(self.current_file, reason, self.linepair[0][i],
+						self.linepair[1][i])
+			else:
+				self.wl.add_wrongline(reason, self.linepair[0][i], self.linepair[1][i]);
+			print ("\033[1;31mWarning!! line pair time stamp are "
+			"different: \n%s\n%s\033[0m" % (self.linepair[0][i], self.linepair[1][i]))
+			result = self.WRONG
+		return result
 		
 	def extractContent(self, file):
 		#print "\n\n########## start parsing #########"
@@ -121,7 +139,9 @@ class ExtractTime(object):
 		print "filename: ", file
 		fp = open(file)
 		is_first_line = False
-		wl = None
+		self.wl = None
+		self.current_file = file
+		array_id = 1
 
 		for line in fp:
 			#print line
@@ -129,8 +149,11 @@ class ExtractTime(object):
 			if res:
 				print res.group(0)
 				if is_first_line:
-					self.firstline.append(res.group(0))
+					#self.firstline.append(res.group(0))
 					is_first_line = False
+					array_id ^= 1
+					print "array_id: ", array_id
+				self.linepair[array_id].append(res.group(0))
 				continue
 
 			## looking for indicative header
@@ -142,14 +165,23 @@ class ExtractTime(object):
 				is_first_line = True
 				continue
 
-		if self.compareFirstTime()==self.WRONG:
-			print "line is wrong 1"
-			if not wl:
-				wl = WrongLine(file, "firstline", self.firstline[0], self.firstline[1])
-			else:
-				wl.add_wrongline("firstline", self.firstline[0], self.firstline[1])
-			self.wrongline.append(wl)
-		del self.firstline[:]
+		#if self.compareFirstTime()==self.WRONG:
+		#	print "line is wrong 1"
+		#	if not wl:
+		#		wl = WrongLine(file, "firstline", 
+		#				self.firstline[0][36:], self.firstline[1][36:])
+		#	else:
+		#		wl.add_wrongline("firstline", 
+		#				self.firstline[0][36:], self.firstline[1][36:])
+		#del self.firstline[:]
+
+		for i in range(0, len(self.linepair[0])):
+			self.comparelinepair(i)
+
+		if self.wl:
+			print "adding wl..."
+			self.wrongline.append(self.wl)
+		self.linepair = [[],[]]
 		#print "########## end of parsing #########\n\n"
 		print "\n\n"
 			
@@ -169,6 +201,8 @@ class ExtractTime(object):
 
 		if self.wrongline:
 			print "-- line that could be wrong --"
+			#print "length of wrongline: ", len(self.wrongline)
+			print ""
 			for wl in self.wrongline:
 				wl.print_me()
 
