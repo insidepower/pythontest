@@ -6,7 +6,6 @@ usage :
 	- will extract the TimeStamp from xxx_parsed_output.txt
 	- check for the discontinuity of the TimeStamp
 
-version : 0.1
 '''
 
 import optparse
@@ -18,24 +17,31 @@ import calendar
 from optparse import OptionParser
 import glob
 
+version = 0.1
 #----------------- parseCmd() ----------------#
 ## parse the command line arguments
 def parseCmd():
 	usage = \
 	'''
+software version = %.1f
 Before running the tool, make sure the either xxx.bin.gz or xxx.bin or \
 xxx.bin_parsed_output.txt is presented in the same directory where this \
 scripts is placed
 
-usage: to unzip the xxx.bin.gz file, parse it, and check for the continuous time
+usage: to unzip the (multiple) xxx.bin.gz file, parse it, and check for the \
+continuous time
 	$ extract_dcm_time.py -z
 
-usage: to parse the xxx.bin file, then check for continuous time stamp
+usage: to parse the (multiple) xxx.bin file, then check for continuous time stamp
 	$ extract_dcm_time.py -p
 
-usage: to check for continuous time stamp
+usage: to check for (multiple) continuous time stamp of xxx.bin_parsed_output.txt files
 	$ extract_dcm_time.py
-	'''
+
+usage: to check for continuous time stamp of a single file \
+(xxx.bin, xxx.bin.gz xxx.parsed_output.txt)
+	$ extract_dcm_time.py
+	''' % version
 	parser = OptionParser(usage)   #when --help is used or when wrong opt
 	parser.add_option("-z", "--is_zip",
 			action="store_true", dest="is_zip",
@@ -170,7 +176,7 @@ class ExtractTime(object):
 
 	def comparelinepair(self, i):
 		result = self.CORRECT
-		print "comparelinepair: i=", i, "; len0:", len(self.linepair[0]), "len1:", len(self.linepair[1])
+		#print "comparelinepair: i=", i, "; len0:", len(self.linepair[0]), "len1:", len(self.linepair[1])
 		if len(self.linepair[0])!=len(self.linepair[1]):
 			ind_len = len(self.linepair[0])
 			eng_len = len(self.linepair[1])
