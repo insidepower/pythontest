@@ -124,6 +124,7 @@ class ExtractTime(object):
 	hr2 = None
 	min2 = None
 	sec2 = None
+	totalfile = 0
 
 	def __init__(self, fn=None, is_zip=False):
 		print "ExtractTime: init"
@@ -340,13 +341,41 @@ class ExtractTime(object):
 		self.linepair = [[],[]]
 		#print "########## end of parsing #########\n\n"
 		print "\n\n"
-			
 
-	
+
+	def checkForMissingFileSeq(self):
+		sortedfile = sorted(self.filelist)
+		res = re.match("Probe.*-(.*)\.bin.*", sortedfile[0])
+		prevSeq = 0
+		total_lost_file = 0
+		if not res:
+			print ("\033[1;31mWarning!! not able to get file seq from "
+					"%s\033[0m" %(file))
+		else:
+			prevSeq = int(res.group(1))
+		for file in sortedfile[1:]:
+			res = re.match("Probe.*-(.*)\.bin.*", file)
+			if not res:
+					print ("\033[1;31mWarning!! not able to get file seq from "
+						"%s\033[0m" %(file))
+					continue
+			seq = int(res.group(1))
+			if (seq != (prevSeq+1)):
+				print "prev seq:", prevSeq, "seq jumped: ", seq
+				total_lost_file += (seq-prevSeq-1)
+				#print "total lost file =", total_lost_file
+			prevSeq =  seq
+
+		if total_lost_file:
+			print "total lost file =", total_lost_file
+
+
+
 	def execute(self):
 		print "Executing..."
 		self.filelist = glob.glob(self.filename)
 		print self.filelist
+		self.totalfile = len(self.filelist)
 
 		for file in self.filelist:
 			self.file_to_be_parsed = file
@@ -360,9 +389,12 @@ class ExtractTime(object):
 			print "* summary: line that could be wrong "
 			print "*"*80
 			#print "length of wrongline: ", len(self.wrongline)
+			print "total file checked = ", self.totalfile
 			print ""
 			for wl in self.wrongline:
 				wl.print_me()
+
+		self.checkForMissingFileSeq()
 
 
 if __name__ == "__main__":   #if it is standalone(./xxx.py), then call main
