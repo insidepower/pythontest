@@ -1,9 +1,12 @@
 #!/usr/bin/python 
 '''
 usage :
-	- Parsed the Probe-ttprb00017-00000034.bin 
-	- extract the TimeStamp from Probe-ttprb00017-00000034.bin_parsed_output.txt
+	- able to unzip the xxx.bin.gz
+	- able to parse xxx.bin using searchgramar server parser tool
+	- will extract the TimeStamp from xxx_parsed_output.txt
 	- check for the discontinuity of the TimeStamp
+
+version : 0.1
 '''
 
 import optparse
@@ -18,7 +21,21 @@ import glob
 #----------------- parseCmd() ----------------#
 ## parse the command line arguments
 def parseCmd():
-	usage = "usage: %prog [options] "
+	usage = \
+	'''
+Before running the tool, make sure the either xxx.bin.gz or xxx.bin or \
+xxx.bin_parsed_output.txt is presented in the same directory where this \
+scripts is placed
+
+usage: to unzip the xxx.bin.gz file, parse it, and check for the continuous time
+	$ extract_dcm_time.py -z
+
+usage: to parse the xxx.bin file, then check for continuous time stamp
+	$ extract_dcm_time.py -p
+
+usage: to check for continuous time stamp
+	$ extract_dcm_time.py
+	'''
 	parser = OptionParser(usage)   #when --help is used or when wrong opt
 	parser.add_option("-z", "--is_zip",
 			action="store_true", dest="is_zip",
@@ -49,24 +66,24 @@ class WrongLine(object):
 	info = None
 
 	def __init__(self, filename, reason, line1, line2):
-		print "WrongLine: init - ", filename
-		print "length of info = ", self.info
+		#print "WrongLine: init - ", filename
+		#print "length of info = ", self.info
 		self.info = []
 		self.filename=filename
 		self.info.append([reason, line1, line2])
 	
 	def add_wrongline(self, reason, line1, line2):
-		print "add_wrongline: ", self.filename
-		print "length of info = ", self.info
+		#print "add_wrongline: ", self.filename
+		#print "length of info = ", self.info
 		self.info.append([reason, line1, line2])
 
 	def print_me(self):
 		#print "~"*100
 		i = 1
-		print "filename: ", self.filename
+		print "\n\nfilename: ", self.filename
 		print "total possible error: ", len(self.info)
 		for line in self.info:
-			print ("%d: reason: %s" % (i, line[0]))
+			print ("%d: @@@@@  reason: %s  @@@@@" % (i, line[0]))
 			print "line1: ", line[1]
 			print "line2: ", line[2]
 			i += 1
@@ -169,13 +186,18 @@ class ExtractTime(object):
 						## month = 1-12
 						if mon == 1:
 							year = year+1
+		#print "sec =", sec
+		#print "self.sec2 = ", self.sec2
 		if sec!=self.sec2:
+			print "second is not continuous..."
 			return self.WRONG
 		else:
 			## second is continuous
 			if(min!=self.min2 or hr!=self.hr2):
+				print "minute or hour is not continuous..."
 				return self.WRONG
 			elif (day!=self.day2 or mon!=self.mon2 or year!=self.year2):
+				print "day, month or year is not continuous..."
 				return self.WRONG
 			else:
 				return self.CORRECT
@@ -190,23 +212,23 @@ class ExtractTime(object):
 		self.day1 = int(prevline[36:38])
 		self.mon1 = int(prevline[39:41])
 		self.year1 = int(prevline[42:46])
-		print "dd:mm:yyyy = ", self.day1, self.mon1, self.year1
+		#print "dd:mm:yyyy = ", self.day1, self.mon1, self.year1
 
 		self.hr1 = int(prevline[66:68])
 		self.min1 = int(prevline[69:71])
 		self.sec1 = int(prevline[72:74])
-		print "self.hr:self.min:self.sec = ", self.hr1, self.min1, self.sec1
+		#print "self.hr:self.min:self.sec = ", self.hr1, self.min1, self.sec1
 
 		for i, line in enumerate(self.linepair[0][1:]):
 			self.day2 = int(line[36:38])
 			self.mon2 = int(line[39:41])
 			self.year2 = int(line[42:46])
-			print "dd:mm:yyyy", self.day2, self.mon2, self.year2
+			#print "dd:mm:yyyy", self.day2, self.mon2, self.year2
 
 			self.hr2 = int(line[66:68])
 			self.min2 = int(line[69:71])
 			self.sec2 = int(line[72:74])
-			print "self.hr:self.min:self.sec = ", self.hr2, self.min2, self.sec2
+			#print "self.hr:self.min:self.sec = ", self.hr2, self.min2, self.sec2
 
 			if self.comparetime()==self.WRONG:
 				reason = "time is not continuous"
@@ -244,7 +266,7 @@ class ExtractTime(object):
 					#self.firstline.append(res.group(0))
 					is_first_line = False
 					array_id ^= 1
-					print "array_id: ", array_id
+					#print "array_id: ", array_id
 				self.linepair[array_id].append(res.group(0))
 				continue
 
@@ -294,7 +316,9 @@ class ExtractTime(object):
 			self.extractContent(self.parsed_filename)
 
 		if self.wrongline:
-			print "-- line that could be wrong --"
+			print "*"*80
+			print "* summary: line that could be wrong "
+			print "*"*80
 			#print "length of wrongline: ", len(self.wrongline)
 			print ""
 			for wl in self.wrongline:
