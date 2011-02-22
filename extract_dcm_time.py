@@ -92,7 +92,7 @@ class WrongLine(object):
 
 #----------------- class ExtractTime() ----------------#
 class ExtractTime(object):
-	filename="Probe-ttprb00017*bin"
+	filename="Probe-*bin_parsed_output.txt"
 	file_to_be_parsed = None
 	filelist = None
 	is_zip = False
@@ -120,13 +120,27 @@ class ExtractTime(object):
 
 	def __init__(self, fn=None, is_zip=False):
 		print "ExtractTime: init"
+		(options, args) = parseCmd()
 		self.is_zip = False
 		self.is_not_parsed = False
-		if fn:
-			self.filename=fn
-		else:
-			self.filename="Probe-ttprb00017*bin"
+
+		if options.is_not_parsed:
+			self.is_not_parsed = True
+			self.filename="Probe-*bin"
+
+		## if the file is zipped, it need to be parsed as well
+		if options.is_zip:
+			self.is_zip = True
+			self.is_not_parsed = True
+			self.filename="Probe-*bin.gz"
+
+		if args:
+			self.filename=args[0]
+
+		print " -- log's attribute -- "
+		print self.__dict__
 	
+
 	def gunzipfile(self, file):
 		basename, ext = os.path.splitext(file)
 		if ext!=".gz":
@@ -208,7 +222,7 @@ class ExtractTime(object):
 		## as in the comparelinepair we have compared both indicative and 
 		## engineering data to make sure they are same
 		prevline = self.linepair[0][0]
-		print prevline
+		#print prevline
 		self.day1 = int(prevline[36:38])
 		self.mon1 = int(prevline[39:41])
 		self.year1 = int(prevline[42:46])
@@ -252,7 +266,7 @@ class ExtractTime(object):
 		print "\n\n"
 		print "filename: ", file
 		fp = open(file)
-		is_first_line = False
+		is_first_line = None
 		self.wl = None
 		self.current_file = file
 		array_id = 1
@@ -267,6 +281,10 @@ class ExtractTime(object):
 					is_first_line = False
 					array_id ^= 1
 					#print "array_id: ", array_id
+				if is_first_line == None:
+					print ("\033[1;31mWarning!! indicative or engineering"
+						"header should be found first before TimeStamp\033[0m")
+					sys.exit(2)
 				self.linepair[array_id].append(res.group(0))
 				continue
 
@@ -327,32 +345,6 @@ class ExtractTime(object):
 
 if __name__ == "__main__":   #if it is standalone(./xxx.py), then call main
 	print "Executing as a standalone application..."
-	(options, args) = parseCmd()
-	## options are like --list-file, -l etc
-	## arguments is the parameters passed by user
-
-	## begin parser
-	log = None
-	if args:
-		print "args: ", args
-		log = ExtractTime(args[0]) 
-	else:
-		log = ExtractTime()
-	
-	log.filename="Probe-ttprb00017*bin_parsed_output.txt"
-
-	if options.is_not_parsed:
-		log.is_not_parsed = True
-		log.filename="Probe-ttprb00017*bin"
-
-	## if the file is zipped, it need to be parsed as well
-	if options.is_zip:
-		log.is_zip = True
-		log.is_not_parsed = True
-		log.filename="Probe-ttprb00017*bin.gz"
-	
-
-	print " -- log's attribute -- "
-	print log.__dict__
+	log = ExtractTime()
 	log.execute()
 
