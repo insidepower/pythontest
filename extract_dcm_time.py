@@ -103,6 +103,7 @@ class ExtractTime(object):
 	wrongline=[]
 	CORRECT = True
 	WRONG = False
+	NOT_EVEN = 0xFF
 	wl = None
 	current_file = None
 	day1 = None
@@ -169,6 +170,17 @@ class ExtractTime(object):
 
 	def comparelinepair(self, i):
 		result = self.CORRECT
+		print "comparelinepair: i=", i, "; len0:", len(self.linepair[0]), "len1:", len(self.linepair[1])
+		if len(self.linepair[0])!=len(self.linepair[1]):
+			ind_len = len(self.linepair[0])
+			eng_len = len(self.linepair[1])
+			reason = "eng & ind pair is not even: ind(%d), eng(%d)" % (ind_len, eng_len)
+			if not self.wl:
+				self.wl = WrongLine(self.current_file, reason, "(check the file)", "(null)")
+			else:
+				self.wl.add_wrongline(reason, "(check the file)", "(null)")
+			print ("\033[1;31mWarning!! %s\033[0m" % reason)
+			return self.NOT_EVEN
 		if self.linepair[0][i][36:]!=self.linepair[1][i][36:]:
 			reason = "indicative and engineering pair are different" 
 			if not self.wl:
@@ -309,13 +321,16 @@ class ExtractTime(object):
 		#del self.firstline[:]
 
 		for i in range(0, len(self.linepair[0])):
-			self.comparelinepair(i)
+			if self.NOT_EVEN==self.comparelinepair(i):
+				break
 
 		self.compare_incremental_time()
 
 		if self.wl:
 			print "adding wl..."
 			self.wrongline.append(self.wl)
+
+		del self.linepair[:]
 		self.linepair = [[],[]]
 		#print "########## end of parsing #########\n\n"
 		print "\n\n"
