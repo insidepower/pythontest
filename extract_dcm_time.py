@@ -49,6 +49,9 @@ usage: to check for continuous time stamp of a single file \
 	parser.add_option("-p", "--is_not_parsed",
 			action="store_true", dest="is_not_parsed",
 			help="to indicate the file is not parsed")  # set options.verbose=True
+	parser.add_option("-c", "--count_only",
+			action="store_true", dest="count_only",
+			help="to indicate the file is not parsed")  # set options.verbose=True
 	#parse_args(arg) arg (default) = sys.argv[1:]
 	return parser.parse_args()  #options.filename, options.verbose..
 
@@ -98,7 +101,7 @@ class WrongLine(object):
 
 #----------------- class ExtractTime() ----------------#
 class ExtractTime(object):
-	filename="Probe-*bin_parsed_output.txt"
+	filename=None
 	file_to_be_parsed = None
 	filelist = None
 	is_zip = False
@@ -125,9 +128,11 @@ class ExtractTime(object):
 	min2 = None
 	sec2 = None
 	totalfile = 0
+	check_all = True
 
 	def __init__(self, fn=None, is_zip=False):
 		print "ExtractTime: init"
+		self.filename="Probe-*bin_parsed_output.txt"
 		(options, args) = parseCmd()
 		self.is_zip = False
 		self.is_not_parsed = False
@@ -141,6 +146,10 @@ class ExtractTime(object):
 			self.is_zip = True
 			self.is_not_parsed = True
 			self.filename="Probe-*bin.gz"
+
+		## if only interested in the lost files
+		if options.count_only:
+			self.check_all = False
 
 		if args:
 			self.filename=args[0]
@@ -344,15 +353,21 @@ class ExtractTime(object):
 
 
 	def checkForMissingFileSeq(self):
+		if self.totalfile<=0:
+			print "no file found, so not checking for missing file"
+			return
 		sortedfile = sorted(self.filelist)
 		res = re.match("Probe.*-(.*)\.bin.*", sortedfile[0])
 		prevSeq = 0
+		startSeq = 0
 		total_lost_file = 0
+		missing_files = []
 		if not res:
 			print ("\033[1;31mWarning!! not able to get file seq from "
 					"%s\033[0m" %(file))
 		else:
 			prevSeq = int(res.group(1))
+			startSeq = prevSeq
 		for file in sortedfile[1:]:
 			res = re.match("Probe.*-(.*)\.bin.*", file)
 			if not res:
@@ -360,14 +375,21 @@ class ExtractTime(object):
 						"%s\033[0m" %(file))
 					continue
 			seq = int(res.group(1))
+
 			if (seq != (prevSeq+1)):
-				print "prev seq:", prevSeq, "seq jumped: ", seq
+				for i in range(prevSeq+1,seq):
+					missing_files.append(i)
+				#print "prev seq:", prevSeq, "seq jumped: ", seq
 				total_lost_file += (seq-prevSeq-1)
 				#print "total lost file =", total_lost_file
 			prevSeq =  seq
 
+		print "Try to check for lost file from start=", startSeq, "to end=", seq
 		if total_lost_file:
-			print "total lost file =", total_lost_file
+			print "total lost file =", total_lost_file, " out of ", self.totalfile
+			print "missing file: ", missing_files
+		else:
+			print "no file lost"
 
 
 
@@ -376,23 +398,25 @@ class ExtractTime(object):
 		self.filelist = glob.glob(self.filename)
 		print self.filelist
 		self.totalfile = len(self.filelist)
+		print self.totalfile
 
-		for file in self.filelist:
-			self.file_to_be_parsed = file
-			self.parsed_filename = file
-			if self.is_zip: self.gunzipfile(file)
-			if self.is_not_parsed: self.parsefile(self.file_to_be_parsed)
-			self.extractContent(self.parsed_filename)
+		if self.check_all:
+			for file in self.filelist:
+				self.file_to_be_parsed = file
+				self.parsed_filename = file
+				if self.is_zip: self.gunzipfile(file)
+				if self.is_not_parsed: self.parsefile(self.file_to_be_parsed)
+				self.extractContent(self.parsed_filename)
 
-		if self.wrongline:
-			print "*"*80
-			print "* summary: line that could be wrong "
-			print "*"*80
-			#print "length of wrongline: ", len(self.wrongline)
-			print "total file checked = ", self.totalfile
-			print ""
-			for wl in self.wrongline:
-				wl.print_me()
+			if self.wrongline:
+				print "*"*80
+				print "* summary: line that could be wrong "
+				print "*"*80
+				#print "length of wrongline: ", len(self.wrongline)
+				print "total file checked = ", self.totalfile
+				print ""
+				for wl in self.wrongline:
+					wl.print_me()
 
 		self.checkForMissingFileSeq()
 
