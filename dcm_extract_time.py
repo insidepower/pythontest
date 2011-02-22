@@ -17,7 +17,7 @@ import calendar
 from optparse import OptionParser
 import glob
 
-version = 0.1
+version = 0.2
 #----------------- parseCmd() ----------------#
 ## parse the command line arguments
 def parseCmd():
@@ -30,17 +30,21 @@ scripts is placed
 
 usage: to unzip the (multiple) xxx.bin.gz file, parse it, and check for the \
 continuous time
-	$ extract_dcm_time.py -z
+	$ dcm_extract_time.py -z
 
 usage: to parse the (multiple) xxx.bin file, then check for continuous time stamp
-	$ extract_dcm_time.py -p
+	$ dcm_extract_time.py -p
 
 usage: to check for (multiple) continuous time stamp of xxx.bin_parsed_output.txt files
-	$ extract_dcm_time.py
+	$ dcm_extract_time.py
+
+usage: to check for missing file only
+	$ dcm_extract_time.py -c
+	$ dcm_extract_time.py -c 'FILE_MATCHING_*PATTERN'
 
 usage: to check for continuous time stamp of a single file \
 (xxx.bin, xxx.bin.gz xxx.parsed_output.txt)
-	$ extract_dcm_time.py
+	$ dcm_extract_time.py
 	''' % version
 	parser = OptionParser(usage)   #when --help is used or when wrong opt
 	parser.add_option("-z", "--is_zip",
