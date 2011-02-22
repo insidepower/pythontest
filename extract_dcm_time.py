@@ -259,6 +259,7 @@ class ExtractTime(object):
 			self.hr1 = self.hr2;
 			self.min1 = self.min2;
 			self.sec1 = self.sec2;
+			prevline = line
 
 		
 	def extractContent(self, file):
