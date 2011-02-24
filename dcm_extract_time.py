@@ -17,7 +17,7 @@ import calendar
 from optparse import OptionParser
 import glob
 
-version = 0.2
+version = 0.3
 #----------------- parseCmd() ----------------#
 ## parse the command line arguments
 def parseCmd():
@@ -504,13 +504,15 @@ class ExtractTime(object):
 
 			self.print_line_record()
 
+			print "*"*80
+			print "* summary: line that could be wrong "
+			print "*"*80
 			if self.wrongline:
-				print "*"*80
-				print "* summary: line that could be wrong "
-				print "*"*80
 				#print "length of wrongline: ", len(self.wrongline)
 				for wl in self.wrongline:
 					wl.print_me()
+			else:
+				print "result: no error found\n\n"
 
 		self.checkForMissingFileSeq()
 
