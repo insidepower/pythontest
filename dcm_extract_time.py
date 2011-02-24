@@ -135,7 +135,7 @@ class ExtractTime(object):
 	check_all = True
 
 	def __init__(self, fn=None, is_zip=False):
-		print "ExtractTime: init"
+		#print "ExtractTime: init"
 		self.filename="Probe-*bin_parsed_output.txt"
 		(options, args) = parseCmd()
 		self.is_zip = False
@@ -151,6 +151,14 @@ class ExtractTime(object):
 			self.is_not_parsed = True
 			self.filename="Probe-*bin.gz"
 
+		if sys.platform=="win32":
+			if (options.is_zip or options.is_not_parsed):
+				print "system used:", sys.platform
+				print "Extraction and Parsing of files need to be run in linux/cygwin"
+				print "Please extract the file before running it in window"
+				print "Application Ended\n"
+				sys.exit(2)
+
 		## if only interested in the lost files
 		if options.count_only:
 			self.check_all = False
@@ -158,7 +166,7 @@ class ExtractTime(object):
 		if args:
 			self.filename=args[0]
 
-		print " -- log's attribute -- "
+		#print " -- log's attribute -- "
 		print self.__dict__
 	
 
@@ -171,6 +179,9 @@ class ExtractTime(object):
 			self.file_to_be_parsed = "%s" % basename
 	
 	def parsefile(self, file):
+		if not os.path.isfile("searchgramar"):
+			print "Not able to find searchgramar. Application terminated"
+			sys.exit(2)
 		print "parsing file: ", file
 		print execBash("./searchgramar signals_ver4.3.1.xml %s" % file)
 		self.parsed_filename = "%s_parsed_output.txt" % file
@@ -253,6 +264,17 @@ class ExtractTime(object):
 		## we just check for indicative for the continuous time stamp
 		## as in the comparelinepair we have compared both indicative and 
 		## engineering data to make sure they are same
+
+		if len(self.linepair[0]) == 0:
+			reason = "zero indicative pair!!"
+			myline = "Check Parsed File" 
+			if not self.wl:
+				self.wl = WrongLine(self.current_file, reason, myline, myline)
+			else:
+				self.wl.add_wrongline(reason, myline, myline);
+			print ("\033[1;31mWarning!! zero indicative pair!! \033[0m")
+			return 
+
 		prevline = self.linepair[0][0]
 		#print prevline
 		self.day1 = int(prevline[36:38])
@@ -298,6 +320,10 @@ class ExtractTime(object):
 		#print "\n\n########## start parsing #########"
 		print "\n\n"
 		print "filename: ", file
+		if not os.path.isfile(file):
+			print "not able to find parsed file:", file
+			print "Application Ended."
+			sys.exit(2)
 		fp = open(file)
 		is_first_line = None
 		self.wl = None
@@ -388,7 +414,7 @@ class ExtractTime(object):
 				#print "total lost file =", total_lost_file
 			prevSeq =  seq
 
-		print "Try to check for lost file from start=", startSeq, "to end=", seq
+		print "Try to check for lost file from start=", startSeq, "to end=", prevSeq
 		if total_lost_file:
 			print "total lost file =", total_lost_file, " out of ", self.totalfile
 			print "missing file: ", missing_files
@@ -400,9 +426,16 @@ class ExtractTime(object):
 	def execute(self):
 		print "Executing..."
 		self.filelist = glob.glob(self.filename)
+		self.filelist.sort()
 		print self.filelist
 		self.totalfile = len(self.filelist)
-		print self.totalfile
+		if self.totalfile == 0:
+			print "no file found. Possible solution: "
+			print "1. put xxx.bin file\n2. run with correct parameter"
+			print "3. specify file pattern to find, e.g.: dcm_extract_time.py FILE*PATTERN"
+			print "Application Ended"
+			sys.exit(2)
+		print "Total file found: ", self.totalfile
 
 		if self.check_all:
 			for file in self.filelist:
