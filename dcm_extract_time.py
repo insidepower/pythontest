@@ -93,14 +93,14 @@ class WrongLine(object):
 	def print_me(self):
 		#print "~"*100
 		i = 1
-		print "\n\nfilename: ", self.filename
+		print "filename: ", self.filename
 		print "total possible error: ", len(self.info)
 		for line in self.info:
 			print ("%d: @@@@@  reason: %s  @@@@@" % (i, line[0]))
 			print "line1: ", line[1]
 			print "line2: ", line[2]
 			i += 1
-		print ""
+		print "\n"
 		#print "~"*100
 
 #----------------- class ExtractTime() ----------------#
@@ -133,6 +133,7 @@ class ExtractTime(object):
 	sec2 = None
 	totalfile = 0
 	check_all = True
+	record_line = []
 
 	def __init__(self, fn=None, is_zip=False):
 		#print "ExtractTime: init"
@@ -156,8 +157,10 @@ class ExtractTime(object):
 				print "system used:", sys.platform
 				print "Extraction and Parsing of files need to be run in linux/cygwin"
 				print "Please extract the file before running it in window"
-				print "Application Ended\n"
-				sys.exit(2)
+				user_in = raw_input("do you want to continue? Thing may be broken... (y/n): ")
+				if 'y' == user_in.lower():
+					print "Application Ended\n"
+					sys.exit(2)
 
 		## if only interested in the lost files
 		if options.count_only:
@@ -165,6 +168,54 @@ class ExtractTime(object):
 
 		if args:
 			self.filename=args[0]
+
+		self.filelist = glob.glob(self.filename)
+		self.filelist.sort()
+		print self.filelist
+		self.totalfile = len(self.filelist)
+		if self.totalfile == 0:
+			print "no file found. Possible solution: "
+			print "1. put xxx.bin file\n2. run with correct parameter"
+			print "3. specify file pattern to find, e.g.: dcm_extract_time.py FILE*PATTERN"
+			print "Application Ended"
+			sys.exit(2)
+		print "Total file found: ", self.totalfile
+
+		if not fn:
+			if options.is_not_parsed:
+				count1 = glob.glob("Probe-*bin.gz")
+				count2 = glob.glob("Probe*parsed_output.txt")
+				count1 = len(count1)
+				count2 = len(count2)
+				if count1 or count2:
+					user_in = raw_input('There is %d of *.gz file and %d of '
+							'*.bin_parsed_output.txt will not be processed '
+							'this time. \nPlease run this tool again later with '
+							'dcm_extract_time.py -z and dcm_extract_time.py.\n'
+							'Another good suggestion is to move all *.gz and '
+							'*.parsed_output.txt file to another folder first.\n'
+							'Then run again.\n'
+							'Continue with just *.bin only? (y/n) ' % (count1, count2))
+					if 'n'== user_in.lower():
+						print("Application Ended")
+						sys.exit(2)
+			if options.is_zip:
+				count1 = glob.glob("Probe-*bin")
+				count2 = glob.glob("Probe-*parsed_output.txt")
+				count1 = len(count1)
+				count2 = len(count2)
+				if count1 or count2:
+					user_in = raw_input('There is %d of *.bin file and %d of '
+							'*.bin_parsed_output.txt will not be processed '
+							'this time. \nPlease run this tool again later with '
+							'dcm_extract_time.py -p and dcm_extract_time.py.\n'
+							'Another good suggestion is to move all *.gz and '
+							'*.parsed_output.txt file to another folder first.\n'
+							'Then run again.\n'
+							'Continue with just *.bin.gz only? (y/n) ' % (count1, count2))
+					if 'n'== user_in.lower():
+						print("Application Ended")
+						sys.exit(2)
 
 		#print " -- log's attribute -- "
 		print self.__dict__
@@ -199,9 +250,10 @@ class ExtractTime(object):
 			result = self.WRONG
 		return result
 
-	def comparelinepair(self, i):
+	## compare indicative and engineering pair to make sure both have the same time stamp
+	def comparelinepair(self):
 		result = self.CORRECT
-		#print "comparelinepair: i=", i, "; len0:", len(self.linepair[0]), "len1:", len(self.linepair[1])
+
 		if len(self.linepair[0])!=len(self.linepair[1]):
 			ind_len = len(self.linepair[0])
 			eng_len = len(self.linepair[1])
@@ -211,18 +263,21 @@ class ExtractTime(object):
 			else:
 				self.wl.add_wrongline(reason, "(check the file)", "(null)")
 			print ("\033[1;31mWarning!! %s\033[0m" % reason)
-			return self.NOT_EVEN
-		if self.linepair[0][i][36:]!=self.linepair[1][i][36:]:
-			reason = "indicative and engineering pair are different" 
-			if not self.wl:
-				self.wl = WrongLine(self.current_file, reason, self.linepair[0][i],
-						self.linepair[1][i])
-			else:
-				self.wl.add_wrongline(reason, self.linepair[0][i], self.linepair[1][i]);
-			print ("\033[1;31mWarning!! line pair time stamp are "
-			"different: \n%s\n%s\033[0m" % (self.linepair[0][i], self.linepair[1][i]))
-			result = self.WRONG
-		return result
+		else:
+			for i in range(0, len(self.linepair[0])):
+				#print "comparelinepair: i=", i, "; len0:", len(self.linepair[0]), "len1:", len(self.linepair[1])
+				if self.linepair[0][i][36:]!=self.linepair[1][i][36:]:
+					reason = "indicative and engineering pair are different" 
+					if not self.wl:
+						self.wl = WrongLine(self.current_file, reason, self.linepair[0][i],
+								self.linepair[1][i])
+					else:
+						self.wl.add_wrongline(reason, self.linepair[0][i], self.linepair[1][i]);
+					print ("\033[1;31mWarning!! line pair time stamp are "
+					"different: \n%s\n%s\033[0m" % (self.linepair[0][i], self.linepair[1][i]))
+					#result = self.WRONG
+				#return result
+
 
 	def comparetime(self):
 		min = self.min1
@@ -366,9 +421,9 @@ class ExtractTime(object):
 		#				self.firstline[0][36:], self.firstline[1][36:])
 		#del self.firstline[:]
 
-		for i in range(0, len(self.linepair[0])):
-			if self.NOT_EVEN==self.comparelinepair(i):
-				break
+		self.record_line.append([self.current_file, 
+								len(self.linepair[0]), len(self.linepair[1])])
+		self.comparelinepair()
 
 		self.compare_incremental_time()
 
@@ -414,29 +469,31 @@ class ExtractTime(object):
 				#print "total lost file =", total_lost_file
 			prevSeq =  seq
 
-		print "Try to check for lost file from start=", startSeq, "to end=", prevSeq
+		print "-"*80
+		print "Summary: File Lost"
+		print "-"*80
+		print "checking for lost file from start =", startSeq, "to end =", prevSeq
 		if total_lost_file:
-			print "total lost file =", total_lost_file, " out of ", self.totalfile
+			print "\ntotal lost file =", total_lost_file
 			print "missing file: ", missing_files
 		else:
-			print "no file lost"
+			print "result:  no file lost\n\n"
 
+
+	## printing: filename, total indicative entries, total engineering entries
+	def print_line_record(self):
+
+		print "-"*80
+		print("%-6s%-50s%-15s%-15s" % ("no.", "filename", "totalind", "totaleng"))
+		print "-"*80
+		for i, line in enumerate(self.record_line):
+			print("%-6d%-50s%-15d%-15d" % (i, line[0], line[1], line[2]))
+		print "total file checked = ", self.totalfile
+		print "\n\n"
 
 
 	def execute(self):
 		print "Executing..."
-		self.filelist = glob.glob(self.filename)
-		self.filelist.sort()
-		print self.filelist
-		self.totalfile = len(self.filelist)
-		if self.totalfile == 0:
-			print "no file found. Possible solution: "
-			print "1. put xxx.bin file\n2. run with correct parameter"
-			print "3. specify file pattern to find, e.g.: dcm_extract_time.py FILE*PATTERN"
-			print "Application Ended"
-			sys.exit(2)
-		print "Total file found: ", self.totalfile
-
 		if self.check_all:
 			for file in self.filelist:
 				self.file_to_be_parsed = file
@@ -445,13 +502,13 @@ class ExtractTime(object):
 				if self.is_not_parsed: self.parsefile(self.file_to_be_parsed)
 				self.extractContent(self.parsed_filename)
 
+			self.print_line_record()
+
 			if self.wrongline:
 				print "*"*80
 				print "* summary: line that could be wrong "
 				print "*"*80
 				#print "length of wrongline: ", len(self.wrongline)
-				print "total file checked = ", self.totalfile
-				print ""
 				for wl in self.wrongline:
 					wl.print_me()
 
