@@ -16,6 +16,7 @@ import sys
 import calendar
 from optparse import OptionParser
 import glob
+import datetime
 
 version = 0.3
 #----------------- parseCmd() ----------------#
@@ -169,9 +170,12 @@ class ExtractTime(object):
 		if args:
 			self.filename=args[0]
 
+		#print " -- log's attribute -- "
+		print self.__dict__
+
 		self.filelist = glob.glob(self.filename)
 		self.filelist.sort()
-		print self.filelist
+		#print self.filelist
 		self.totalfile = len(self.filelist)
 		if self.totalfile == 0:
 			print "no file found. Possible solution: "
@@ -179,7 +183,7 @@ class ExtractTime(object):
 			print "3. specify file pattern to find, e.g.: dcm_extract_time.py FILE*PATTERN"
 			print "Application Ended"
 			sys.exit(2)
-		print "Total file found: ", self.totalfile
+		#print "Total file found: ", self.totalfile
 
 		if not fn:
 			if options.is_not_parsed:
@@ -217,8 +221,6 @@ class ExtractTime(object):
 						print("Application Ended")
 						sys.exit(2)
 
-		#print " -- log's attribute -- "
-		print self.__dict__
 	
 
 	def gunzipfile(self, file):
@@ -493,7 +495,7 @@ class ExtractTime(object):
 
 
 	def execute(self):
-		print "Executing..."
+		#print "Executing..."
 		if self.check_all:
 			for file in self.filelist:
 				self.file_to_be_parsed = file
@@ -518,7 +520,8 @@ class ExtractTime(object):
 
 
 if __name__ == "__main__":   #if it is standalone(./xxx.py), then call main
-	print "Executing as a standalone application..."
+	#print "Executing as a standalone application..."
+	print "Date:", datetime.datetime.now()
 	log = ExtractTime()
 	log.execute()
 
