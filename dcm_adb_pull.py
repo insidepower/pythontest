@@ -57,6 +57,10 @@ def main():
 		#print "sh_adb_cmd: ", sh_adb_cmd
 		execBash(sh_adb_cmd, False, True)
 		end -= 1
+
+	print "total files supposed to be pulled: ", (end-start+1)
+	totalfile = execBash("/usr/bin/find . -name 'Probe*' | wc -l")[0]
+	print "total files actually pulled:", totalfile
 	
 
 #----------------- standalone() ----------------#
