@@ -52,15 +52,21 @@ def main():
 	start = int(args[0])
 	end = int(args[1])
 	print "start-sequence: ", start, "; end-sequence: ", end
+	totalfile_to_be_pulled = end-start+1
 	while(end >= start):
 		sh_adb_cmd = adb_cmd % end
 		#print "sh_adb_cmd: ", sh_adb_cmd
 		execBash(sh_adb_cmd, False, True)
 		end -= 1
 
-	print "total files supposed to be pulled: ", (end-start+1)
+	print "total files supposed to be pulled: ", totalfile_to_be_pulled
 	totalfile = execBash("/usr/bin/find . -name 'Probe*' | wc -l")[0]
 	print "total files actually pulled:", totalfile
+
+	user_in = raw_input("do you want to copy *.gz to archive directory? (y/n)")
+	if "y" == user_in.lower():
+		execBash("mkdir archive")
+		execBash("cp *.gz archive/")
 	
 
 #----------------- standalone() ----------------#

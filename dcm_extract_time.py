@@ -294,9 +294,12 @@ class ExtractTime(object):
 				hr = (hr+1)%24
 				if hr == 0:
 					max_day = calendar.monthrange(self.year1, self.mon1)[1]
-					day = (day+1)% max_day
+					## as max_day is valid, e.g. 28 feb 2011, max_day=28
+					## however we don't haev 29, so we should add 1 for the modulus
+					day = (day+1)% (max_day+1)
 					if day == 0:
 						mon = (mon+1)%12
+						print "mon", mon
 						## month = 1-12
 						if mon == 1:
 							year = year+1
