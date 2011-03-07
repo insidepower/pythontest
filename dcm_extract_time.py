@@ -232,9 +232,6 @@ class ExtractTime(object):
 			self.file_to_be_parsed = "%s" % basename
 	
 	def parsefile(self, file):
-		if not os.path.isfile("searchgramar"):
-			print "Not able to find searchgramar. Application terminated"
-			sys.exit(2)
 		print "parsing file: ", file
 		execBash("./searchgramar signals_ver4.3.1.xml %s" % file, True)
 		self.parsed_filename = "%s_parsed_output.txt" % file
@@ -499,6 +496,10 @@ class ExtractTime(object):
 
 	def execute(self):
 		#print "Executing..."
+		if not os.path.isfile("searchgramar"):
+			print "Not able to find searchgramar. Application terminated"
+			sys.exit(2)
+
 		if self.check_all:
 			for file in self.filelist:
 				self.file_to_be_parsed = file
