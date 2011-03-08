@@ -18,7 +18,7 @@ from optparse import OptionParser
 import glob
 import datetime
 
-version = 0.3
+version = 0.4
 #----------------- parseCmd() ----------------#
 ## parse the command line arguments
 def parseCmd():
@@ -443,25 +443,40 @@ class ExtractTime(object):
 		if self.totalfile<=0:
 			print "no file found, so not checking for missing file"
 			return
+		file_to_start = 0
+		pattern = "Probe-[^-]+-(.*)\.bin.*"
 		sortedfile = sorted(self.filelist)
-		res = re.match("Probe.*-(.*)\.bin.*", sortedfile[0])
+		total_file_to_be_checked = len(sortedfile)
+		missing_files = []
 		prevSeq = 0
 		startSeq = 0
 		total_lost_file = 0
-		missing_files = []
-		if not res:
+
+		res = re.match(pattern, sortedfile[0])
+		while not res:
 			print ("\033[1;31mWarning!! not able to get file seq from "
-					"%s\033[0m" %(file))
-		else:
-			prevSeq = int(res.group(1))
-			startSeq = prevSeq
-		for file in sortedfile[1:]:
-			res = re.match("Probe.*-(.*)\.bin.*", file)
+					"%s\033[0m" %(sortedfile[0]))
+			file_to_start+=1
+			if file_to_start >= total_file_to_be_checked:
+				print "-"*80
+				print "Summary: File Lost"
+				print "-"*80
+				print("\033[1;31mWarning!! not able to get any file seq \033[0m")
+				return
+			res = re.match(pattern, sortedfile[file_to_start])
+
+		prevSeq = int(res.group(1))
+		startSeq = prevSeq
+		## we will start with next file since current file will be the start
+		file_to_start += 1
+		for file in sortedfile[file_to_start:]:
+			res = re.match(pattern, file)
 			if not res:
 					print ("\033[1;31mWarning!! not able to get file seq from "
 						"%s\033[0m" %(file))
 					continue
 			seq = int(res.group(1))
+			#print "seq =", seq
 
 			if (seq != (prevSeq+1)):
 				for i in range(prevSeq+1,seq):
