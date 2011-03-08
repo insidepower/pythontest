@@ -17,8 +17,9 @@ import calendar
 from optparse import OptionParser
 import glob
 import datetime
+import shutil
 
-version = 0.4
+version = 0.5
 #----------------- parseCmd() ----------------#
 ## parse the command line arguments
 def parseCmd():
@@ -56,7 +57,10 @@ usage: to check for continuous time stamp of a single file \
 			help="to indicate the file is not parsed")  # set options.verbose=True
 	parser.add_option("-c", "--count_only",
 			action="store_true", dest="count_only",
-			help="to indicate the file is not parsed")  # set options.verbose=True
+			help="to only check for lost file")  # set options.verbose=True
+	parser.add_option("-r", "--rename",
+			action="store_true", dest="rename_needed",
+			help="to rename before running gunzip and parser")  # set options.verbose=True
 	#parse_args(arg) arg (default) = sys.argv[1:]
 	return parser.parse_args()  #options.filename, options.verbose..
 
@@ -152,6 +156,12 @@ class ExtractTime(object):
 			self.is_zip = True
 			self.is_not_parsed = True
 			self.filename="Probe-*bin.gz"
+
+		if options.rename_needed:
+			self.rename_needed = True
+			self.is_zip = True
+			self.is_not_parsed = True
+			self.filename="Probe-*bin.gz.*"
 
 		if sys.platform=="win32":
 			if (options.is_zip or options.is_not_parsed):
@@ -508,6 +518,15 @@ class ExtractTime(object):
 		print "total file checked = ", self.totalfile
 		print "\n\n"
 
+	def rename(self, filename):
+		pattern = "(Probe.*bin.gz).*"
+		res = re.match(pattern, filename)
+		if res:
+			new_filename = res.group(1)
+			shutil.move(filename, new_filename)
+			return new_filename
+		else:
+			return filename
 
 	def execute(self):
 		#print "Executing..."
@@ -517,6 +536,8 @@ class ExtractTime(object):
 
 		if self.check_all:
 			for file in self.filelist:
+				if self.rename_needed: file=self.rename(file)
+				print "after-rename =", file
 				self.file_to_be_parsed = file
 				self.parsed_filename = file
 				if self.is_zip: self.gunzipfile(file)
