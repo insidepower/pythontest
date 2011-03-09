@@ -19,7 +19,7 @@ import glob
 import datetime
 import shutil
 
-version = 0.5
+version = 0.6
 #----------------- parseCmd() ----------------#
 ## parse the command line arguments
 def parseCmd():
@@ -115,6 +115,7 @@ class ExtractTime(object):
 	filelist = None
 	is_zip = False
 	is_not_parsed = False
+	rename_needed = False
 	linepair=[[],[]]
 	secondpair=[]
 	firstline=[]
