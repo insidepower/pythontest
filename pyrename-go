@@ -1,0 +1,32 @@
+#!/usr/bin/python
+'''
+move all files from */year/month/day/file to a single folder
+and rename the file as year-month-day-file
+'''
+import os
+import re
+import shutil
+import subprocess
+
+reg_obj=re.compile(r".*/(200.)/([0-9]+)/([0-9]+)")
+
+def renamefiles(result, root, files):
+	year=result.group(1)
+	month=result.group(2)
+	day=result.group(3)
+	#print ("%s, %s, %s"%(result.group(1),result.group(2),result.group(3)))
+	for file in files:
+		filename="sai2004/%s-%s-%s-%s" % (year, month, day, file)
+		#print filename
+		cmd="cp " +root+ "/" +file+ " " +filename
+		print cmd
+		#shutil.copyfiles(file, filename)
+		subprocess.call(cmd, shell=True)
+
+# need absolute path for os.walk
+for root, dirs, files in os.walk('/home/insidepower/mnt/go'):
+	#print("root=%s, files=%s" %(root, files,))
+	#print root
+	result=reg_obj.match(root)
+	if result:
+		renamefiles(result, root, files)

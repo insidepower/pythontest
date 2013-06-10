@@ -6,9 +6,36 @@ and rename the file as year-month-day-file
 import os
 import re
 import shutil
+import sys
 import subprocess
+from optparse import OptionParser
 
 reg_obj=re.compile(r".*/(200.)/([0-9]+)/([0-9]+)")
+
+def execBash(cmd, is_suppress=False):
+	print cmd
+	p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+	#(stdoutdata, stderrdata) = p.communicate()
+	stdoutdata = p.communicate()[0]
+	p.poll()
+	if (p.returncode != 0) and (not is_suppress):
+		print ("\033[1;31mWarning!! command (%s) not ended properly."
+				"exit status = %d\033[0m" %(cmd, p.returncode))
+	#out = p.stdout.read()
+	#print out
+	return (stdoutdata, p.returncode)
+
+
+
+def parseCmd():
+	usage = "usage: %prog [options] <startBranch>..<endBranch> <branch1> <branch2> [<branch3>]"
+	parser = OptionParser(usage)
+	parser.add_option("-s", "--simple-rename", dest="is_simple_rename",
+			action="store_true", default=False,
+			help="simple rename only");
+	return parser.parse_args()
+
+
 
 def renamefiles(result, root, files):
 	year=result.group(1)
@@ -23,10 +50,44 @@ def renamefiles(result, root, files):
 		#shutil.copyfiles(file, filename)
 		subprocess.call(cmd, shell=True)
 
+
+
+def simpleRename(files, newname):
+	index = 001
+	filename_arr = []
+	print("-"*60)
+	print("%s		----->	%s" % ("Current filename", "New filename"))
+	print("-"*60)
+	for file in files:
+		newfilename = "%s%03d" % (newname, index)
+		cmd="%s				----->	%s" % (file, newfilename)
+		index=index+1
+		filename_arr.append([file, newfilename])
+		print("%s" %(cmd,))
+
+	should_apply = raw_input('\n\nProceed to apply new name? (y/n) ')
+	if 'y' == should_apply.lower():
+		for old, new in filename_arr:
+			cmd = "mv %s %s" % (old, new)
+			execBash(cmd)
+			#print("old=%s, new=%s" % (old, new))
+
+
+
 # need absolute path for os.walk
-for root, dirs, files in os.walk('/home/insidepower/mnt/go'):
+# walk into each sub-directoaries under current directory
+for root, dirs, files in os.walk(os.getcwd()):
 	#print("root=%s, files=%s" %(root, files,))
-	#print root
-	result=reg_obj.match(root)
-	if result:
-		renamefiles(result, root, files)
+	#result=reg_obj.match(root)
+	#if result:
+	#	renamefiles(result, root, files)
+
+	(options, args) = parseCmd()
+	#print("args = %s " % (args,))
+
+	if options.is_simple_rename:
+		if args == []:
+			print ("need to specify the new file.")
+			sys.exit(0)
+		simpleRename(sorted(files), args[0])
+
