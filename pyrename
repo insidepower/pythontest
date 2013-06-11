@@ -69,20 +69,20 @@ def simpleRename(files, newname, start_number):
 		index = 001
 	filename_arr = []
 	print("-"*60)
-	print("%s		----->	%s" % ("Current filename", "New filename"))
+	print("%-30s%10s  %s" % ("Current filename", " ","New filename"))
 	print("-"*60)
 	for file in files:
 		## get file extension
 		reg_ext=re.compile(r".*(\..*)")
 		result=reg_ext.match(file)
 		if result:
-			print result.group(1)
+			#print result.group(1)
 			newfilename = "%s%03d%s" % (newname, index, result.group(1))
 		else:
 			newfilename = "%s%03d" % (newname, index)
 
 		## showing new filename
-		cmd="%s				----->	%s" % (file, newfilename)
+		cmd="%-30s%10s  %s" % (file, "----->", newfilename)
 		index=index+1
 		filename_arr.append([file, newfilename])
 		print("%s" %(cmd,))
