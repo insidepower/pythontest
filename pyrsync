@@ -11,8 +11,71 @@ from optparse import OptionParser
 from execBash import execBash
 
 #----------------- global variable ----------------#
-dest_phone = "/media/knxy/3965-6566/001ns/"
+dest_hp = "/media/knxy/3965-6566/001ns/"
 dest_pc ='/home/knxy/Insync/insidekenshare@gmail.com/001ns'
+copyToDest = []
+copyToSrc = []
+deleteFromDest = []
+header='''<!DOCTYPE html>
+<html>
+<head>
+<script src="/home/knxy/confignewpc/jquery/jquery-1.10.1.min.js">
+</script>
+<script>
+$(document).ready(function(){
+	$(".btn_show").click(function(){
+		var pos=$(this).attr("value")
+		$(this).after("<img src='"+pos+"'>");
+	});
+
+	$("#btn_remove").click(function(){
+		$("img").remove();
+	});
+});
+</script>
+<style>
+th {
+ background-color: #EEEEEE;
+ border: 1px solid #CCCCCC;
+ color: #555555;
+ padding: 8px;
+ text-align: center;
+}
+
+table {
+ border-collapse: collapse;
+ border-spacing: 0;
+}
+
+td {
+ border: 1px solid #CCCCCC;
+ padding: 5px 10px;
+ vertical-align: top;
+}
+
+caption {
+ text-align: center;
+ background-color: #EFEFEF;
+ border: 1px solid #CCCCCC;
+ border-bottom: none;
+ font-weight: bold;
+ padding: 5px;
+}
+</style>
+</head>
+<body>
+<button id=btn_remove>clean</button>
+%s
+</body>
+</html>'''
+
+html_table='''
+<table>
+<caption>%s</caption>
+<th>source(%s)</th>
+<th>destination(%s)</th>%s
+</table>
+'''
 
 #----------------- parseCmd() ----------------#
 ## parse the command line arguments
@@ -34,14 +97,11 @@ def parseCmd():
 	return parser.parse_args()  #options.filename, options.verbose..
 
 
-#----------------- main() ----------------#
+#----------------- processResult() ----------------#
 def processResult(result, src_dir, dest_dir):
 	#print result
-	copyToDest = []
-	copyToSrc = []
-	deleteFromDest = []
 	current_dir = os.getcwd()
-	reg_obj_new = re.compile(r"(.)f......... (.*)")
+	reg_obj_new = re.compile(r"(.)f(.)........ (.*)")
 	reg_obj_del = re.compile(r"\*deleting *(.*)")
 	for line in result.split('\n'):
 		print line
@@ -49,8 +109,12 @@ def processResult(result, src_dir, dest_dir):
 		if matched_line:
 			if matched_line.group(1)=='>':
 				#print matched_line.group(0)
-				fn = current_dir+os.sep+dest_dir+os.sep+matched_line.group(2)
-				copyToDest.append(fn)
+				fn = current_dir+os.sep+"%s"+os.sep+matched_line.group(3)
+				fn_src = fn % src_dir
+				fn_dest = ""
+				if matched_line.group(2)!='+':
+					fn_dest = fn % dest_dir
+				copyToDest.append([fn_src, fn_dest])
 			#elif matched_line.group(1)=='<':
 			#	print matched_line.group(0)
 			#	CopyToSrc()
@@ -65,6 +129,35 @@ def processResult(result, src_dir, dest_dir):
 	print "\ndeleteFromDest list: "
 	print deleteFromDest
 
+	generateHtml(src_dir, dest_dir)
+
+#----------------- processResult() ----------------#
+def generateHtml(src_dir, dest_dir):
+	###
+	content1=""
+	for file in copyToDest:
+		content1+="<tr><td><button value='%s' class=btn_show>show</button>" % file[0]
+		content1+="<a href='"+file[0]+"'> "+file[0]+" </a></td>\n"
+		content1+="<td><button value=%s>show</button>" % file[1]
+		content1+="<a href='"+file[1]+"'> "+file[1]+" </a></td></tr>\n"
+	table1=html_table % ("Copy to "+dest_dir, src_dir, dest_dir, content1)
+
+	content2=""
+	for file in deleteFromDest:
+		content2+="<tr><td></td><td><button value=%s>show</button>" % file
+		content2+="<a href='"+file+"'> "+file+" </a></td></tr>\n"
+	table2 = html_table % \
+			("Delete from destination "+dest_dir, src_dir, dest_dir, content2)
+
+	## put all content together
+	table=table1+"<br><br>"+table2
+	content=header % (table)
+
+	## open file to write
+	f = open("delete.html", "w")
+	f.write("%s" % content)
+	f.close()
+
 
 #----------------- main() ----------------#
 def main():
@@ -77,16 +170,16 @@ def main():
 			--exclude="Product class 21 Feb 2013.mp3" \
 			--exclude=friends.doc '
 	if options.dest_dir:
-		dest_dir = options.dest_dir
+		dest_dir = options.dest_dir + os.sep
 	else:
 		## default is always sync to pc
-		dest_dir = dest_pc
+		dest_dir = dest_pc + os.sep
 
 	if options.src_dir:
-		src_dir = options.src_dir
+		src_dir = options.src_dir + os.sep
 	else:
 		## default is always sync from hp
-		src_dir = dest_hp
+		src_dir = dest_hp + os.sep
 
 	if options.execute_cmd:
 		result = execBash(cmd+src_dir+" "+dest_dir)[0]
