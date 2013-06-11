@@ -33,8 +33,10 @@ def parseCmd():
 	parser.add_option("-s", "--simple-rename", dest="is_simple_rename",
 			action="store_true", default=False,
 			help="simple rename only");
+	parser.add_option("-d", "--start-number",action="store", type="int",
+			dest="start_number",
+			help="start number/index of filename")
 	return parser.parse_args()
-
 
 
 def renamefiles(result, root, files):
@@ -52,14 +54,34 @@ def renamefiles(result, root, files):
 
 
 
-def simpleRename(files, newname):
-	index = 001
+#----------------- [ simpleRename ]----------------#
+#  Example: Simeple rename
+#  ------------------------------------------------------------
+#  Current filename		----->	New filename
+#  ------------------------------------------------------------
+#  kkk001				----->	hoho001
+#  kkk002				----->	hoho002
+#
+def simpleRename(files, newname, start_number):
+	if start_number:
+		index = start_number
+	else:
+		index = 001
 	filename_arr = []
 	print("-"*60)
 	print("%s		----->	%s" % ("Current filename", "New filename"))
 	print("-"*60)
 	for file in files:
-		newfilename = "%s%03d" % (newname, index)
+		## get file extension
+		reg_ext=re.compile(r".*(\..*)")
+		result=reg_ext.match(file)
+		if result:
+			print result.group(1)
+			newfilename = "%s%03d%s" % (newname, index, result.group(1))
+		else:
+			newfilename = "%s%03d" % (newname, index)
+
+		## showing new filename
 		cmd="%s				----->	%s" % (file, newfilename)
 		index=index+1
 		filename_arr.append([file, newfilename])
@@ -73,7 +95,7 @@ def simpleRename(files, newname):
 			#print("old=%s, new=%s" % (old, new))
 
 
-
+#----------------- [ main execution ]----------------#
 # need absolute path for os.walk
 # walk into each sub-directoaries under current directory
 for root, dirs, files in os.walk(os.getcwd()):
@@ -89,5 +111,6 @@ for root, dirs, files in os.walk(os.getcwd()):
 		if args == []:
 			print ("need to specify the new file.")
 			sys.exit(0)
-		simpleRename(sorted(files), args[0])
+
+		simpleRename(sorted(files), args[0], options.start_number)
 
