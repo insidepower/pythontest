@@ -1,0 +1,107 @@
+#!/usr/bin/env python
+'''
+usage : 
+'''
+import optparse
+import subprocess
+import re
+import os
+import sys
+from optparse import OptionParser
+from execBash import execBash
+
+#----------------- global variable ----------------#
+dest_phone = "/media/knxy/3965-6566/001ns/"
+dest_pc ='/home/knxy/Insync/insidekenshare@gmail.com/001ns'
+
+#----------------- parseCmd() ----------------#
+## parse the command line arguments
+def parseCmd():
+	usage = "usage: %prog [options] <startBranch>..<endBranch> <branch1> <branch2> [<branch3>]"
+	parser = OptionParser(usage)   #when --help is used or when wrong opt
+ 	parser.add_option("-f", "--file", dest="filename",
+            help="read data from FILENAME")  # default action="store", options.filename
+	parser.add_option("-e", "--execute",
+			action="store_true", dest="execute_cmd",
+			help="execute the actual rsync")  # set options.list_file=True
+	parser.add_option("-d", "--dest",
+			action="store", type="string", dest="dest_dir",
+			help="execute the actual rsync")  # set options.list_file=True
+	parser.add_option("-s", "--src",
+			action="store", type="string", dest="src_dir",
+			help="execute the actual rsync")  # set options.list_file=True
+	#parse_args(arg) arg (default) = sys.argv[1:]
+	return parser.parse_args()  #options.filename, options.verbose..
+
+
+#----------------- main() ----------------#
+def processResult(result, src_dir, dest_dir):
+	#print result
+	copyToDest = []
+	copyToSrc = []
+	deleteFromDest = []
+	current_dir = os.getcwd()
+	reg_obj_new = re.compile(r"(.)f......... (.*)")
+	reg_obj_del = re.compile(r"\*deleting *(.*)")
+	for line in result.split('\n'):
+		print line
+		matched_line = reg_obj_new.match(line)
+		if matched_line:
+			if matched_line.group(1)=='>':
+				#print matched_line.group(0)
+				fn = current_dir+os.sep+dest_dir+os.sep+matched_line.group(2)
+				copyToDest.append(fn)
+			#elif matched_line.group(1)=='<':
+			#	print matched_line.group(0)
+			#	CopyToSrc()
+		else:
+			matched_del = reg_obj_del.match(line)
+			if matched_del:
+				fn_d = current_dir+os.sep+dest_dir+os.sep+matched_del.group(1)
+				deleteFromDest.append(fn_d)
+
+	print "\ncopyToDest list: "
+	print copyToDest
+	print "\ndeleteFromDest list: "
+	print deleteFromDest
+
+
+#----------------- main() ----------------#
+def main():
+	(options, args) = parseCmd()
+
+	cmd = 'rsync -azrvi --delete --size-only \
+			--exclude=ns_talk/*** \
+			--exclude=uploaded\ photo/*** \
+			--exclude=Wendy\ g3\ 5\ Feb\ 2013.mp3 \
+			--exclude="Product class 21 Feb 2013.mp3" \
+			--exclude=friends.doc '
+	if options.dest_dir:
+		dest_dir = options.dest_dir
+	else:
+		## default is always sync to pc
+		dest_dir = dest_pc
+
+	if options.src_dir:
+		src_dir = options.src_dir
+	else:
+		## default is always sync from hp
+		src_dir = dest_hp
+
+	if options.execute_cmd:
+		result = execBash(cmd+src_dir+" "+dest_dir)[0]
+	else:
+		cmd = cmd+" --dry-run "
+		result = execBash(cmd+src_dir+" "+dest_dir)[0]
+
+	processResult(result, src_dir, dest_dir)
+
+#----------------- standalone() ----------------#
+## if standalone, i.e. called directly from shell
+if __name__ == '__main__':
+	main()
+
+#----------------- reference() ----------------#
+#print ("\033[1;31mWarning!! command (%s) not ended properly."
+#		"exit status = %d\033[0m" %(cmd, p.returncode))
+
