@@ -93,8 +93,8 @@ class parse_sgf(object):
 		for i, line in enumerate(self.start_end):
 			print "game_var:", self.game_var[i], 
 			print "\t\tstart_end:", line
-		print self.prop_start
-		print self.var_line
+		#print self.prop_start
+		#print self.var_line
 
 		## free up space
 		del self.game_lines
@@ -207,10 +207,10 @@ class parse_sgf(object):
 			del self.game_lines[i-m]
 			m +=  1
 		## print remaining lines in game_lines
-		print "start of game === "
-		for line in self.game_lines:
-			print line[:-1]
-		print "end of game === "
+		#print "start of game === "
+		#for line in self.game_lines:
+		#	print line[:-1]
+		#print "end of game === "
 
 	#------ < parse_game_info > ------
 	def parse_game_info(self, game_str):
@@ -236,22 +236,22 @@ class parse_sgf(object):
 	#------ < parse_game_var > ------
 	def parse_game_var(self, i):
 		for n, line in enumerate(self.game_lines[i:]):
-			print ""
-			print "line:", line[:-1]
+			#print ""
+			#print "line:", line[:-1]
 			prop = self.reg_prop_se.search(line)
 			while prop:
 				#print "prop0:", prop.group()
 				#print "len=",len(line),"; end=",prop.end()
-				print "var:", self.var
-				print "game_var:", self.game_var
+				#print "var:", self.var
+				#print "game_var:", self.game_var
 				if line[prop.start()] == '(':
-					print "next_var_ready", self.next_var_ready
+					#print "next_var_ready", self.next_var_ready
 					if self.next_var_ready:
 						self.next_var_ready = False
 						self.var += 1
 					else:
 						self.start_end[-1][-1:] = i+n, prop.start()
-					print "prop1:", prop.group()
+					#print "prop1:", prop.group()
 					self.game_var.append(
 						[[self.var], self.prop_start[-1]])
 					self.start_end.append([i+n, prop.start(), None])
@@ -262,7 +262,7 @@ class parse_sgf(object):
 					#self.prop_start.append(len(self.game_var)-1)
 					#print "prop1:", prop.start(), ", ", start_pos
 				else: ## match ')'
-					print "match ); prop_start=", self.prop_start
+					#print "match ); prop_start=", self.prop_start
 					if not self.next_var_ready:
 						## this is a sub single variation (;...)
 						## with no other variations, e.g. (;..(;...))
@@ -297,7 +297,7 @@ class parse_sgf(object):
 		kid_index = len(self.game_var)-1
 		while True:
 			parent = self.game_var[parent][1]
-			print "parent:", self.game_var[parent]
+			#print "parent:", self.game_var[parent]
 			self.game_var[parent][-1].append(kid_index)
 			if parent == 0:
 				break
@@ -311,7 +311,7 @@ class parse_sgf(object):
 			## parse first line (start from column s[1])
 			seq = self.parse_game_seq_1line(
 								self.game_lines[line_start][s[1]:])
-			print "start:", self.game_lines[line_start][s[1]:]
+			#print "start:", self.game_lines[line_start][s[1]:]
 			if seq: self.var_line.append(seq)
 			#print "b4", self.var_line
 			while line_start < b4_line_end:
@@ -319,11 +319,11 @@ class parse_sgf(object):
 				## start from column 0
 				line_start += 1
 				seq = self.parse_game_seq_1line(self.game_lines[line_start])
-				print "middle:", self.game_lines[line_start]
+				#print "middle:", self.game_lines[line_start]
 				if seq: self.var_line.extend([seq])
 			## parse last line, from column 0 till column s[1]
 			self.parse_game_seq_1line(self.game_lines[line_start][:s[1]])
-			print "end:", self.game_lines[line_start][:s[1]]
+			#print "end:", self.game_lines[line_start][:s[1]]
 
 
 	#------ < parse_game_seq_1line > ------
@@ -331,10 +331,10 @@ class parse_sgf(object):
 		my_var_line = []
 		res = self.reg_bw.search(line)
 		while res:
-			print "res:",res.group()
+			#print "res:",res.group()
 			my_var_line.extend([res.group()[1]+res.group()[3:-1]])
 			res = self.reg_bw.search(line,res.end())
-		print "my_var_line", my_var_line
+		#print "my_var_line", my_var_line
 		return my_var_line
 
 
