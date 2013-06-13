@@ -25,7 +25,11 @@ header='''<!DOCTYPE html>
 $(document).ready(function(){
 	$(".btn_show").click(function(){
 		var pos=$(this).attr("value")
-		$(this).after("<img src='"+pos+"'>");
+		$(this).siblings("a").after("<img src='"+pos+"'>");
+	});
+
+	$(".btn_del").click(function(){
+		$(this).siblings("img").remove();
 	});
 
 	$("#btn_remove").click(function(){
@@ -100,7 +104,7 @@ def parseCmd():
 #----------------- processResult() ----------------#
 def processResult(result, src_dir, dest_dir):
 	#print result
-	current_dir = os.getcwd()
+	#current_dir = os.getcwd()
 	reg_obj_new = re.compile(r"(.)f(.)........ (.*)")
 	reg_obj_del = re.compile(r"\*deleting *(.*)")
 	for line in result.split('\n'):
@@ -109,7 +113,7 @@ def processResult(result, src_dir, dest_dir):
 		if matched_line:
 			if matched_line.group(1)=='>':
 				#print matched_line.group(0)
-				fn = current_dir+os.sep+"%s"+os.sep+matched_line.group(3)
+				fn = "%s"+os.sep+matched_line.group(3)
 				fn_src = fn % src_dir
 				fn_dest = ""
 				if matched_line.group(2)!='+':
@@ -121,13 +125,17 @@ def processResult(result, src_dir, dest_dir):
 		else:
 			matched_del = reg_obj_del.match(line)
 			if matched_del:
-				fn_d = current_dir+os.sep+dest_dir+os.sep+matched_del.group(1)
+				fn_d = dest_dir+os.sep+matched_del.group(1)
 				deleteFromDest.append(fn_d)
 
-	print "\ncopyToDest list: "
-	print copyToDest
-	print "\ndeleteFromDest list: "
-	print deleteFromDest
+	print "-"*80
+	print("source directory : %s" % (src_dir))
+	print("destination directory : %s" % (dest_dir))
+	print "-"*80
+	#print "\ncopyToDest list: "
+	#print copyToDest
+	#print "\ndeleteFromDest list: "
+	#print deleteFromDest
 
 	generateHtml(src_dir, dest_dir)
 
@@ -137,6 +145,7 @@ def generateHtml(src_dir, dest_dir):
 	content1=""
 	for file in copyToDest:
 		content1+="<tr><td><button value='%s' class=btn_show>show</button>" % file[0]
+		content1+="<button value='%s' class=btn_del>clean</button>" % file[0]
 		content1+="<a href='"+file[0]+"'> "+file[0]+" </a></td>\n"
 		content1+="<td><button value=%s>show</button>" % file[1]
 		content1+="<a href='"+file[1]+"'> "+file[1]+" </a></td></tr>\n"
@@ -144,7 +153,8 @@ def generateHtml(src_dir, dest_dir):
 
 	content2=""
 	for file in deleteFromDest:
-		content2+="<tr><td></td><td><button value=%s>show</button>" % file
+		content2+="<tr><td></td><td><button value=%s class=btn_show>show</button>" % file
+		content2+="<button value='%s' class=btn_del>clean</button>" % file
 		content2+="<a href='"+file+"'> "+file+" </a></td></tr>\n"
 	table2 = html_table % \
 			("Delete from destination "+dest_dir, src_dir, dest_dir, content2)
