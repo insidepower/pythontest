@@ -9,8 +9,10 @@ import os
 import sys
 from optparse import OptionParser
 from execBash import execBash
+import time
 
 #----------------- global variable ----------------#
+dest_hp_cifs = "/home/knxy/sdcard/external_sd/001ns/"
 dest_hp = "/media/knxy/3965-6566/001ns/"
 dest_pc ='/home/knxy/Insync/insidekenshare@gmail.com/001ns'
 copyToDest = []
@@ -93,10 +95,13 @@ def parseCmd():
 			help="execute the actual rsync")  # set options.list_file=True
 	parser.add_option("-d", "--dest",
 			action="store", type="string", dest="dest_dir",
-			help="execute the actual rsync")  # set options.list_file=True
+			help="specify the destination directory")  # set options.list_file=True
 	parser.add_option("-s", "--src",
 			action="store", type="string", dest="src_dir",
-			help="execute the actual rsync")  # set options.list_file=True
+			help="specify the source directory")  # set options.list_file=True
+	parser.add_option("-p", "--handphone-src",
+			action="store_true", dest="handphone_src",
+			help="specify that source is handphone")  # set options.list_file=True
 	#parse_args(arg) arg (default) = sys.argv[1:]
 	return parser.parse_args()  #options.filename, options.verbose..
 
@@ -139,6 +144,14 @@ def processResult(result, src_dir, dest_dir):
 
 	generateHtml(src_dir, dest_dir)
 
+
+#----------------- processResult() ----------------#
+def logToFile(result):
+	f = open("%s%s%s%slog%s" % (os.path.expanduser("~"), os.sep,
+		"001ns-sync-record", os.sep, time.time()), "w")
+	f.write("%s" % result)
+	f.close()
+
 #----------------- processResult() ----------------#
 def generateHtml(src_dir, dest_dir):
 	###
@@ -153,7 +166,7 @@ def generateHtml(src_dir, dest_dir):
 
 	content2=""
 	for file in deleteFromDest:
-		content2+="<tr><td></td><td><button value=%s class=btn_show>show</button>" % file
+		content2+="<tr><td></td><td><button value='%s' class=btn_show>show</button>" % file
 		content2+="<button value='%s' class=btn_del>clean</button>" % file
 		content2+="<a href='"+file+"'> "+file+" </a></td></tr>\n"
 	table2 = html_table % \
@@ -168,12 +181,14 @@ def generateHtml(src_dir, dest_dir):
 	f.write("%s" % content)
 	f.close()
 
+	execBash("chromium-browser delete.html")
+
 
 #----------------- main() ----------------#
 def main():
 	(options, args) = parseCmd()
 
-	cmd = 'rsync -azrvi --delete --size-only \
+	cmd = 'rsync -rltgoDzrvi --no-perms --delete --size-only \
 			--exclude=ns_talk/*** \
 			--exclude=uploaded\ photo/*** \
 			--exclude=Wendy\ g3\ 5\ Feb\ 2013.mp3 \
@@ -187,12 +202,15 @@ def main():
 
 	if options.src_dir:
 		src_dir = options.src_dir + os.sep
-	else:
-		## default is always sync from hp
+	elif options.handphone_src:
 		src_dir = dest_hp + os.sep
+	else:
+		## default is always sync from samba
+		src_dir = dest_hp_cifs + os.sep
 
 	if options.execute_cmd:
 		result = execBash(cmd+src_dir+" "+dest_dir)[0]
+		logToFile(result)
 	else:
 		cmd = cmd+" --dry-run "
 		result = execBash(cmd+src_dir+" "+dest_dir)[0]
