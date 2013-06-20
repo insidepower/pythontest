@@ -36,6 +36,9 @@ def parseCmd():
 	parser.add_option("-d", "--start-number",action="store", type="int",
 			dest="start_number",
 			help="start number/index of filename")
+	parser.add_option("-m", "--match_str",action="store", type="string",
+			dest="match_str",
+			help="only rename matched string")
 	return parser.parse_args()
 
 
@@ -94,6 +97,16 @@ def simpleRename(files, newname, start_number):
 			execBash(cmd)
 			#print("old=%s, new=%s" % (old, new))
 
+#----------------- [ main execution ]----------------#
+def matchRename(files, match_str, args, start_number):
+	reg_obj_new = re.compile(r"%s" % match_str)
+	match_files = []
+	for file in files:
+		match_line = reg_obj_new.match(file)
+		if match_line:
+			match_files.append(file)
+	simpleRename(match_files, args, start_number)
+
 
 #----------------- [ main execution ]----------------#
 # need absolute path for os.walk
@@ -107,10 +120,13 @@ for root, dirs, files in os.walk(os.getcwd()):
 	(options, args) = parseCmd()
 	#print("args = %s " % (args,))
 
-	if options.is_simple_rename:
-		if args == []:
-			print ("need to specify the new file.")
-			sys.exit(0)
+	if args == []:
+		print ("need to specify the new file.")
+		sys.exit(0)
 
+	if options.is_simple_rename:
 		simpleRename(sorted(files), args[0], options.start_number)
+
+	if options.match_str:
+		matchRename(sorted(files), options.match_str, args[0], options.start_number)
 
