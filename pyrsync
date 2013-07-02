@@ -15,6 +15,7 @@ import time
 dest_hp_cifs = "/home/knxy/sdcard/external_sd/001ns/"
 dest_hp = "/media/knxy/3965-6566/001ns/"
 dest_pc ='/home/knxy/Insync/insidekenshare@gmail.com/001ns'
+dest_pendrive='/media/knxy/PENDRIVE/001ns'
 copyToDest = []
 copyToSrc = []
 deleteFromDest = []
@@ -27,7 +28,7 @@ header='''<!DOCTYPE html>
 $(document).ready(function(){
 	$(".btn_show").click(function(){
 		var pos=$(this).attr("value")
-		$(this).siblings("a").after("<img src='"+pos+"'>");
+		$(this).siblings("a").after("<img style='max-width: 300px' src='"+pos+"'>");
 	});
 
 	$(".btn_del").click(function(){
@@ -102,6 +103,9 @@ def parseCmd():
 	parser.add_option("-p", "--handphone-src",
 			action="store_true", dest="handphone_src",
 			help="specify that source is handphone")  # set options.list_file=True
+	parser.add_option("-r", "--pendrive-dest",
+			action="store_true", dest="pendrive_dest",
+			help="specify that destination is pendrive")
 	#parse_args(arg) arg (default) = sys.argv[1:]
 	return parser.parse_args()  #options.filename, options.verbose..
 
@@ -159,11 +163,11 @@ def generateHtml(src_dir, dest_dir):
 	for file in copyToDest:
 		content1+="<tr><td><button value='%s' class=btn_show>show</button>" % file[0]
 		content1+="<button value='%s' class=btn_del>clean</button>" % file[0]
-		content1+=os.path.dirname(file[0])
-		content1+="<a href='"+file[0]+"'>/"+os.path.basename(file[0])+" </a></td>\n"
+		content1+=os.path.dirname(file[0])+os.sep
+		content1+="<a href='"+file[0]+"'>"+os.path.basename(file[0])+" </a></td>\n"
 		content1+="<td><button value=%s>show</button>" % file[1]
-		content1+=os.path.dirname(file[1])
-		content1+="<a href='"+file[1]+"'>/"+os.path.basename(file[1])+" </a></td></tr>\n"
+		content1+=os.path.dirname(file[1])+os.sep
+		content1+="<a href='"+file[1]+"'>"+os.path.basename(file[1])+" </a></td></tr>\n"
 	table1=html_table % ("Copy to "+dest_dir, src_dir, dest_dir, content1)
 
 	content2=""
@@ -171,8 +175,8 @@ def generateHtml(src_dir, dest_dir):
 		content2+="<tr><td></td><td>"
 		content2+="<button value='%s' class=btn_show>show</button>" % file
 		content2+="<button value='%s' class=btn_del>clean</button>" % file
-		content2+=os.path.dirname(file)
-		content2+="<a href='"+file+"'>/"+os.path.basename(file)+" </a></td></tr>\n"
+		content2+=os.path.dirname(file)+os.sep
+		content2+="<a href='"+file+"'>"+os.path.basename(file)+" </a></td></tr>\n"
 	table2 = html_table % \
 			("Delete from destination "+dest_dir, src_dir, dest_dir, content2)
 
@@ -198,11 +202,6 @@ def main():
 			--exclude=Wendy\ g3\ 5\ Feb\ 2013.mp3 \
 			--exclude="Product class 21 Feb 2013.mp3" \
 			--exclude=friends.doc '
-	if options.dest_dir:
-		dest_dir = options.dest_dir + os.sep
-	else:
-		## default is always sync to pc
-		dest_dir = dest_pc + os.sep
 
 	if options.src_dir:
 		src_dir = options.src_dir + os.sep
@@ -211,6 +210,17 @@ def main():
 	else:
 		## default is always sync from samba
 		src_dir = dest_hp_cifs + os.sep
+
+
+	if options.dest_dir:
+		dest_dir = options.dest_dir + os.sep
+	elif options.pendrive_dest:
+		dest_dir = dest_pendrive + os.sep
+		src_dir = dest_pc + os.sep
+	else:
+		## default is always sync to pc
+		dest_dir = dest_pc + os.sep
+
 
 	if options.execute_cmd:
 		result = execBash(cmd+src_dir+" "+dest_dir, False, True)[0]

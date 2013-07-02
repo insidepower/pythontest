@@ -93,7 +93,7 @@ def simpleRename(files, newname, start_number):
 	should_apply = raw_input('\n\nProceed to apply new name? (y/n) ')
 	if 'y' == should_apply.lower():
 		for old, new in filename_arr:
-			cmd = "mv %s %s" % (old, new)
+			cmd = "mv '%s' '%s'" % (old, new)
 			execBash(cmd)
 			#print("old=%s, new=%s" % (old, new))
 
