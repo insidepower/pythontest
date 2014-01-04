@@ -12,7 +12,10 @@ from execBash import execBash
 import time
 
 #----------------- global variable ----------------#
+#ssh_mount_dir = "mnt/sshfs/external_sd/001ns"
+ssh_mount_dir = "storage/sdcard1/001ns"
 dest_hp_cifs = "/home/knxy/sdcard/external_sd/001ns/"
+src_hp_mtp = "/run/user/knxy/gvfs/mtp:host=%5Busb%3A002%2C007%5D/SD\ card/001ns"
 dest_hp = "/media/knxy/3965-6566/001ns/"
 dest_pc ='/home/knxy/Insync/insidekenshare@gmail.com/001ns'
 dest_pendrive='/media/knxy/PENDRIVE/001ns'
@@ -103,9 +106,24 @@ def parseCmd():
 	parser.add_option("-p", "--handphone-src",
 			action="store_true", dest="handphone_src",
 			help="specify that source is handphone")  # set options.list_file=True
+	parser.add_option("-m", "--samba-src",
+			action="store_true", dest="samba_src",
+			help="specify that source is samba")  # set options.list_file=True
 	parser.add_option("-r", "--pendrive-dest",
 			action="store_true", dest="pendrive_dest",
 			help="specify that destination is pendrive")
+	parser.add_option("-a", "--tablet-acer",
+			action="store_true", dest="tablet_acer",
+			help="rsync between acer tablet and pc")
+	parser.add_option("-l", "--lenovo_hp_ssh",
+			action="store_true", dest="lenovo_hp_ssh",
+			help="rsync between acer tablet and pc")
+	parser.add_option("-t", "--use_android_mtp",
+			action="store_true", dest="use_android_mtp",
+			help="use android mtp to rsync with pc")
+	parser.add_option("--reverse",
+			action="store_true", dest="reverse_src_dest",
+			help="rsync pc with android")
 	#parse_args(arg) arg (default) = sys.argv[1:]
 	return parser.parse_args()  #options.filename, options.verbose..
 
@@ -197,6 +215,7 @@ def main():
 	(options, args) = parseCmd()
 
 	cmd = 'rsync -rltgoDzrvi --no-perms --delete --size-only \
+			--progress \
 			--exclude=ns_talk/*** \
 			--exclude=uploaded\ photo/*** \
 			--exclude=Wendy\ g3\ 5\ Feb\ 2013.mp3 \
@@ -207,9 +226,13 @@ def main():
 		src_dir = options.src_dir + os.sep
 	elif options.handphone_src:
 		src_dir = dest_hp + os.sep
+	elif options.samba_src:
+		src_dir = src_hp_cifs + os.sep
+	elif options.use_android_mtp:
+		src_dir = src_hp_mtp + os.sep
 	else:
-		## default is always sync from samba
-		src_dir = dest_hp_cifs + os.sep
+		## default is always sync from hp
+		src_dir = dest_hp + os.sep
 
 
 	if options.dest_dir:
@@ -217,6 +240,15 @@ def main():
 	elif options.pendrive_dest:
 		dest_dir = dest_pendrive + os.sep
 		src_dir = dest_pc + os.sep
+	elif options.lenovo_hp_ssh:
+		cmd = cmd + " --rsh='ssh -p 2222' --modify-window=1 "
+		src_dir = "192.168.0."+ os.environ.get("HP_IP")
+		src_dir = src_dir + ":/" + ssh_mount_dir + os.sep
+		dest_dir = dest_pc + os.sep
+	elif options.tablet_acer:
+		cmd = cmd + " --rsh='ssh -p 2222' --modify-window=1 "
+		src_dir = dest_pc + os.sep
+		dest_dir = "192.168.0.10:/mnt/external_sd/001ns" + os.sep
 	else:
 		## default is always sync to pc
 		dest_dir = dest_pc + os.sep
@@ -228,6 +260,18 @@ def main():
 	else:
 		cmd = cmd+" --dry-run "
 		result = execBash(cmd+src_dir+" "+dest_dir, False, True)[0]
+
+	## special handling based on options ----
+	if options.lenovo_hp_ssh:
+		src_dir = os.environ.get("HOME")+"/"
+		src_dir = src_dir + ssh_mount_dir
+
+	## final handling based on options ----
+	if options.reverse_src_dest:
+		## reverse the source and destination
+		temp = dest_dir
+		dest_dir = src_dir
+		src_dir = temp
 
 	processResult(result, src_dir, dest_dir)
 
