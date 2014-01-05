@@ -1,0 +1,1462 @@
+Python Highlight
+
+==== [ topic ][ File ] ===
+[ --- start ---- ]
+f = open("foo.txt")
+f = open("foo.txt", "w")  ##"wb"; "wU" unicode
+f = open("foo.txt", "r+")  ## for read and write; r is default if mode is ommited
+f.write( "%3d" % (year) )
+print >>f, "%3d" % (year)
+f.close()
+f.tell() = current position in file (int, in byte)
+f.seek(offset, fromwat) #change cur pos; fromwat=[0=default(sof), 1=cur_pos, 2=eof]
+f.readline()  # read line by line, increment cur position to next line after this
+f.readlines()  # read all lines in file at once
+for line in f:   # efficient, fast, simpler code
+fp = open(self.commit_file, "r+"); oldcontent = fp.read(); fp.seek(0); fp.write("newline\n"+oldcontent); fp.close()
+for line in fp:  print line; print 'after'; for line in fp: print '2', line	      ## after 'after' nothing is printed as fp is ended
+print __name__, __file__            ## e.g. a.py:  output= a    c:\path\to\a.py
+import __main__;  print __main__.__file__   ## @another file, to print __main__ filename
+delete last line in a file: lines = fp.readlines(); w.writelines([item for item in lines[:-1]])
+fp.tell()        ## current file position
+fp.seek(new_position, whence); ##whence: 0=abs,1=relative to cur pos, 2=rel to file end
+remove 3rd & 4rd line then insert new line1,line2: 
+
+with open("file1") as infile, open("file2","w") as outfile: for i,line in enumerate(infile):
+        if i==2:# 3rd line
+            outfile.write("new line1\n"); outfile.write("new line2\n"); 
+        elif i==3:# 4th line
+            pass
+        else:outfile.write(line)
+delete one line(lineno) from a file
+
+def removeLine(filename, lineno):
+    fro = open(filename, "rb")  ## open as binary
+    current_line = 0
+    while current_line < lineno:
+        fro.readline()
+        current_line += 1
+
+    seekpoint = fro.tell()    ## get current file position
+    frw = open(filename, "r+b")   ## open as binary... 
+    frw.seek(seekpoint, 0)  ## set frw to that file position   
+    fro.readline()    # read the line we want to discard
+
+    # now move the rest of the lines in the file one line back 
+    chars = fro.readline()
+    while chars:
+        frw.writelines(chars)
+        chars = fro.readline()
+
+    fro.close()
+    frw.truncate()      ## delete the rest of the file
+    frw.close()
+[ ---  end  ---- ]
+
+==== [ topic ][ filename ] ===
+[ --- start ---- ]
+print path.abspath(sys.modules['__main__'].__file__)   ##not guarded, see below
+if run from interpreter, __file__ will be empty, use hasattr() to protect it
+if hasattr(sys.modules['__main__'], "__file__"):
+print path.abspath(sys.modules['__main__'].__file__)
+print dir(sys.modules['__main__'])
+[ ---  end  ---- ]
+
+==== [ topic ][ string ] ===
+[ --- start ---- ]
+str(...)  # cast type ; repr (...) == conversion function
+a = 'haha'+"haha"+'''hahaha'''+"""hahaha"""
+b = "Hello world" ; a=b[0]='H'; c=b[:5]="Hello"
+s = "my string is" + str('haha')
+s = "my string is" + repr('haha')
+s = "my string is" + `haha`            # shorthand of repr?
+word="HelloA"; word[0:3]='He'                     # 0,1,2 (3 not included) (i<=m<j)
+print r'C:\nowhere'   #raw string
+repeatlist = ['st']*3+['nd']*2 = ['st','st','st','nd','nd']
+repeat=5; print('x'*repeat)=xxxxxx
+my_str2 = ''.join(my_list); my_str2;   'a str'   # convert list to string
+seq=['1','2'] ; '+'.join(seq)                           # 1+2
+dirs=('', 'usr', 'bin'); '/'.join(dirs)                    # '/usr/bin'
+'1+2+3'.split('+')                                       # ['1', '2', '3']
+'default is whitespace, newline, tab'.split()     # ['default','is','whitespace,','newline,', 'tab']
+'   internal space is kept   '.strip()                # 'internal space is kept'
+' **_ char!!_**'.strip('_*!')                         # ' **_ char'  note: space is not get rid of
+maketrans
+'a joke'.replace('joke', 'story')                     # a story
+str1="hi %s %s"; val=('thank', 'you'); print (str % val)   # "hi thank you"
+"he is flying and flying".find("fly")                  # index=(left most)=6 (-1 if not found)
+"he is flying and flying".find("fly", 15, 30)       # index=17
+from string import Template; s=Template('$x!'); s.substitute(x='Hi') # 'Hi!';
+from string import Template; s=Template('${x}ern'); s.substitute(x='Wood')  # Woodern
+s=Template('$who is $expr'); v={}; v['who']='Harry'; v['expr']='happy'; s.substitute(v)
+if 'I am' in ['i am', 'new']     # return true
+string formatting
+'%r is conversion of python obj using repr' % 'repr'
+'%011f' % pi   # 0003.141593 (field with=11)
+'%8.3f' % pi  # 3.14x (field with=8, precision=3)
+'%.2f' % pi # 3.14
+'%.5s' % 'this's a sentence'  # this'
+'%.*s' % (5, 'this's a sentence')  # this'   #read * from tuple
+'%-11.3f' % pi  #3.141_._._.'
+percentage = '%%'
+dollar="$$"  # when use within template
+fix_str_val="i'm fix at %d" % (my_val); ## even when my_val change, fix_str_val still same
+dyn_str_val="i'm flexible at %d";print (dyn_str_val % (my_val,))   # my_val changes 
+if isinstance(s, basestring):
+method: s.isalnum(), s.isalpha(), s.isdigit(), s.islower(), s.issapce(), s.istitle(), s.isupper(), 
+method(fins sub): s.count(sub, start, end), s.endswith(suffix, start, end), s.find(sub, start, end), s.index(sub, start, end), s.replace(old, new, maxreplace), s.rfind(sub, start, end) # find last occurrence, s.rindex(sub, start, end) # find last occurrence or raise error, s.rsplit(sep, maxsplit) # split from the end of str, s.split(sep, maxsplit), s.splitlines(keepends) #if keepends=1, last \n preserved, s.startswith(prefix, start, end), s.translate(table, delchar), 
+method: s.capitalize(), s.lower(), s.swapcase(), s.title(), s.upper()
+method(formatting):  s.center(width, pad), s.ljust(width, fill), s.lstrip(char), s.rjust(width), s.rstrip(char), s.strip(char), s.zill(width)
+method(misc):s.join(t), s.decode(), s.encode(),  s.expandtabs(tabsize), 
+unicode:tab(\u0009),lf(\u000a),cr(\u000d),\\(\u000c), '(\u0027), "(\u0022),\0(\u0000) 
+str="ab cd ef"; for a in str: print a  ## a,b, ,c,d, e,f; for a in str.split(): print a #ab,cd,ef
+[ ---  end  ---- ]
+
+==== [ topic ][ List ] (modifiable) ===
+[ --- start ---- ]
+size=19; board = size*[size*['. ']]              ## init 2D array
+names = ["John", "Phil"]
+a = names[1] = "Phil"
+names[0] = "Eine"
+names.append("Kate")
+names.insert(1, "Sydney")
+a = [1, "haha", 20, ["hoho", 30, 50, ["hehe", "hihi"], 100]
+b = a[3][3][1] = 'hihi'
+dir="hihi"; me = [ "hoho", "--%s" % dir]   #will auto expand to "--hihi"
+my_num=[]; for i in range(1,10): my_num.append(i); #my_num need declare
+my_num=[]; my_num.extend([num])    # need iterator [] for extend()
+my_num[0:10:2]=[1,3,5,7,9]
+my_num[::3]=[1,4,7]
+my_str='a str'; my_list=list(my_str) = ['a', ' ', 's', 't', 'r']   # convert string to list
+my_num2=[1,5]; my_num2[1:1]=[2,3,4]   ## my_num2==[1,2,3,4,5]; 
+my_num2[1:4]=[]; ## my_num2==[1,5]
+x=[[1,2],1,1,[2,1,[1,2]]]; x.count(1) #2; x.count([1,2])  #1
+list_a = list_a + list_b  # not as efficient as list_a.extend(b)
+my_list=['we', 'are', 'are']; my_str.index('are')  #1 (first occurrence)
+my_list.remove('are')  # remove first occurrence
+my_list.reverse()  # modified my_list, reverse the content, don't return
+for i in reversed(my_list)  # reversed return an iterator
+new_list = list(reversed(my_list))  # reverse my_list and return a new list
+new_list = my_list[:]  # if ref_list=my_str (point to same mem), my_list[:] return new
+new_list = copy.deepcopy(my_list)
+last_item = my_list.pop()   #remove last item
+first_item = my_list.pop(0)
+del list[:]          # delete all
+del list[:-100]    # delete everything except last 100
+my_num = [5,2,9,7]; my_num.sort()=my_num.sort(cmp); my_num.sort(reverse=true)
+cmp(a=5,b=2)=1, cmp(b,a)=-1, cmp(a,a)==0
+x=["a", "aaa", "aa"]; x.sort(key=len)  #["a", "aa", "aaa"];
+LIFO: pop(), append()
+FIFO: pop(0), append()
+method: index(str_to_find, start, stop)
+max(list) == return the highest value in a list ;   min(list) == lowest value in list
+len(list) == total items inside a list
+passing list as an argument: my_list=[1,2]; my_func(*my_list)
+e.g.: d_end=['st','nd','rd']+17*['th']+['st','nd','rd']+7*['th']+['st'];d=raw_input("Day(1-31):");re=d+d_end[int(d)-1]
+n=[1,2,3,4,5]; n[-2:-1]=>4; n[-2:]=>4,5; n["]=>all; n[:2]=>1,2; n[4::-2]=>5,3,1; n[::-2]=>5,3,1; n[:4:-2]=>[]
+n=[1,2]+[5,6]=>[1,2,5,6]   # not as efficient as list_a.extend(b);   n=[50]*2=>[50,50]
+insert into list: n2=[1,5]; n2[1:1]=[2,3,4] => [1,2,3,45]
+str->list: mylist = list('abc') => ['a', 'b', 'c']    # list->str: ''.join(['a','b','c'] => 'abc'
+list_iter_obj=iter(L); item=list_iter_obj.next(); item2=list_iter_obj.next()        # list as iter obj
+[ ---  end  ---- ]
+
+==== [ topic ][ Tuple ] (non-modifiable) ===
+[ --- start ---- ]
+names = ("haha", "hoho")
+[ ---  end  ---- ]
+
+==== [ topic ][ Dictionaries ] (key and value) ===
+[ --- start ---- ]
+
+key should be a tuple (non-modifiable, e.g. string, number, tuple, ...), not list (modifiable)
+for key in my_dict:        # better than my_dict.has_key(key)
+dict(a=1, b=2, c=3);   # clenear, less quote;    d1 = {1:"haha"}
+items = [('name', 'ken'), ('job', 'cook')]; mydict = dict(items)   # dict() is type cast
+a = { "mykey":"value", "mykey2":10 }  #mykey need to be a string
+b = a["mykey"] = "value"
+a["newkey"] = "new_value"   ## add a new entry into dict a
+if a.has_key("mykey"):
+a['not_exist']    ## error  as key not exist, use a.get('name') => will return None if key not found
+ret = a.get('not_exist', 'default is not_able_get_retrieve_key')
+username = a.get("key", "xx_val");  # return if a["key"] found, else "xx_val"
+user = a.setdefault("key", "xx_val"l;  # return if a["key"] found, else set m["k"]=xx_val
+all_keys = a.keys()   # return a list of dict key values
+all_values = a.values() # return a list of dict values
+my_val = a.pop(k, default) # return  and remove a[k] or return default if not found
+my_val = a.popitem()  # remove a rand (key,val) pair and return it as a tuple
+del a["mykey"]
+d.items()   # return (key, value pair) => [(key1, value1),(key2, value2)...]
+d.keys()    # return [key1, key2...]
+d.values()  # return [value1, val2, ... ]
+method: len(m) # num of items, m.clear() # delete all, m.copy() # shallow copy of m, m.items() # return a list of (key, value) pairs, m.iteritems() # return iterator that produce (key, val) pairs, m.iterkeys() # return iterator of key instead of a list, m.update(b) # add all objs from b to m, 
+list(d.iteritems)           ## convert iterator to list
+dict_as_list = dictionary.items()    ## turn dict into a list [(key, value),....]
+my_dict = dict(dict_as_list)
+my_dict = dict(dict_as_list, d=4, e=5)
+email_at_dotcom = dict( [name, '.com' in email] for name, email in emails.iteritems() )
+to learn: .values() or .itervalues()  (to get a list or iterator of dict value)
+to learn: .keys (get a list of key) or .iterkeys() (get an iterator of key)
+to learn: .items() (get a list of (key, value) pair) or iteritems()
+iterkeys, itervalues is more efficient to use in for loop
+dict.fromkeys(['k1','k2'])   #gen a dict with keys, better than {}.fromkeys(...) as the latter generate an empty dict first
+d.pop('name')   # return value & remove key 'name'
+d.popitem()       # return random [key, value]
+d.update('name':'ken')     # change value of key
+[ ---  end  ---- ]
+
+==== [ topic ][ set ] ===
+[ --- start ---- ]
+unordered, cannot be indexed, never duplicated, unique
+s = set([3, 5, 10])
+a = t | s    #(in t or in s or both)
+a = t & s   #(in t and in s)
+a = t - s    #(in t but not in s)
+a = t ^ s   #(in t or in s, but not both)
+s.copy(), s.difference(t), s.intersection(t), s.issubset(t), s.issuperset(t), s.symmetric_difference(t), s.union(t)
+method for mutable set types
+s.add('x')
+s.update([11,12])   #set([11, 10, 3, 12, 5]) note: unordered
+s.remove(10)
+s.clear(), s.different_update(t), s.discard(item), s.intersection_update(t), s.pop(), s.remove(item), s.symmetric_difference_update(t)
+num=[1,2,2]; set(num)   ## return set([1,2])
+if len(numbers) == len(set(numbers)):  print "List is unique"
+[ ---  end  ---- ]
+
+==== [ topic ][ iteration and looping ] ===
+[ --- start ---- ]
+for i in range(1,10): print('%d' % i)  # note "print i" will throw syntax error
+a = range(5) = [0, 1, 2, 3, 4]  # start from zero
+a = range(1,3) = [1,2]   # not inclusive of last one
+a = range(1, 10, 2) = [1, 3, 5, 7, 9]
+a = xrange(10000000)  # range() use a lot of memory, xrange only cal when accessed
+xrange.tolist()
+[ ---  end  ---- ]
+
+==== [ topic ][ range ][ careful ] ===
+[ --- start ---- ]
+a=[1,2,3,4,5]
+a[1:2]    # [2]
+a[:-1]    # [1, 2, 3, 4]
+a[1:-1]   # [2, 3, 4]
+a[1:]      # [2, 3, 4, 5]
+a[-1::-1]   # [5, 4, 3, 2, 1]   ## reverse, include first
+a[-1:0:-1]   #[5, 4, 3, 2]      ## reverse, exclude first
+a[-2:0:-1]    #[4, 3, 2]         ## reverse, exclude first and last
+[ ---  end  ---- ]
+
+
+==== [ topic ][ condition ] [ compare ] ===
+[ --- start ---- ]
+repo=None; not repo=True;
+x is y             # x and y same object
+x == y           # x's value == y's value
+x in y
+seq1 == seq2
+list1 == list2   # True if all elem same
+dict1 == dict2    # True if all key-value pair same
+type({}) == type(my_dict)
+type("") == type(my_string)
+str(type({}) == "<class 'dict'>"
+[ ---  end  ---- ]
+
+==== [ topic ][ sys ][ loaded modules ] ===
+[ --- start ---- ]
+import sys
+sys.stdout.write("Enter your name")
+name = sys.stdin.readline()
+name = raw_input("Enter your name")  #return str, always use this than input()
+name = raw_input("xxx") or 'unknown'
+sys.exit(2)
+sys.stdout.write('Dive in')
+sys.argv: list of cmd line args, argv[0]=path to script itself
+if len(sys.argv) != 2:
+sys.stdin: std input file obj used by input()
+sys.stdout: std output file used by print()
+sys.stderr
+sys.stderr.write('Dive in')
+redirect output
+ori = sys.stdout; fp = open('out.log', 'w'); sys.stdout =  fp; print 'this will be logged in out.log'
+sys.stdout = ori; print 'this will be displayed'
+list(sys.modules.keys())             ## show loaded modules; fun1 in sys.modules; sys.modules['func1']
+[ ---  end  ---- ]
+
+==== [ topic ][ os ] ===
+[ --- start ---- ]
+dir = os.getcwd() #current working directory
+repo = os.path.join("/myrepo", ".repo", "repo") #/myrepo/.repo/repo
+wrapper_path = os.path.abspath(__file__)
+my_dir = os.path.dirname("/foo/bar/")  ## get directory root name, return bar
+my_basename = os.path.basename("/foo/bar/")       ## return bar, get actual name
+tagsFile = os.path.normpath(tagsFile) ## normalize A/D/../B --> A/B
+os.sep
+if not os.path.isfile(repo):
+os.isdir("/my-dir")
+if not os.path.exists(os.path.join(my_dir, name)): #name is a list
+filename = os.environ.get('PYTHONSTARTUP')
+os.mkdir('.repo')
+os.remove(mytemp)
+home_dot_repo = os.path.expanduser('~/.repoconfig')
+os.system("i:\kn\myrepo.py --help")  # replaced with Popen or subprocess.call
+(shortname, extension) = os.path.splitext(filename)    # file extension: result extension=.gz
+files = map(unicode, os.listdir(file_path))
+os.path.split("/tmp1/tmp2/last")        # ('tmp1/tmp2', 'last')    
+os.path.splitext("log.txt")                  # ("log", "txt")
+os.path.normath("c:\\abc\def\..\my.txt")    # c:\abc\my.txt    ; eliminate \\ and ..
+os.path.abspath("relative_to_cur_dir.txt")      # <current_dir>/relative_to_cur_dir.txt (doesn't check for existence)
+os.path.exists(os.path.abspath("relative_to_cur_dir.txt"))
+time.ctime(os.path.getmtime("c:\last_modified_time")); os.path.getsize("/my-sizes-in-bytes.txt")
+os.remove("to-be-deleted.txt")
+os.mkdir("/new-dir"); os.makedirs("/parent/child/all-new-parent-child-will-be-created")
+os.rmdir("/empty-dir")
+os.walk(top, topdown=True, onerror=None, followlinks=False) # iterates down from topdown or bottom up; return (dirpath, dirnames, filenames) for each dir
+path=os.path.normcase(path)  #unix(case-sensitive) no effect; window: case-insensitive
+[ ---  end  ---- ]
+
+==== [ topic ][ shutil ] ===
+[ --- start ---- ]
+import shutil
+shutil.move("orig-filename.txt", "new-name.txt")          # rename
+shutil.move("a-file.txt", "/dir")                                       # move a file to a directory
+shutil.copy("src-file.txt", "backup.txt")
+shutil.rmtree("/not-empty-dir-also-will-be-deleted")      # careful!
+[ ---  end  ---- ]
+
+==== [ topic ][ print ] ===
+[ --- start ---- ]
+myname="ken"
+print "my name is " + myname
+print "my name is %s" % (myname, )  # comma is needed for one tuple element
+print "%d: my name is %s" % (5, myname)  #syntax error, parenthesis needed?
+print ("%d: my name is %s" % (5, myname))
+print ('%-*s%*s' % (5, 'item', 10, 'price'))   #%-*s (left align with 5 space)
+print >> sys.stderr, 'Text'
+print >> sys.stderr, n,     # final comma to squelch newline character
+print(n, file=sys.stderr, end='')    # print n to sys.stderr with no newline char
+list=["a", "b", "c"]; print("my list is %s" % ",".join(list))     # print my list is a, b, c
+print "Hello", "world"    # "Hello world" space inserted between
+print "Hello"+"world"   # "HelloWorld"  no space
+print "Hello",   # continue printing (will concatenate with subsequent print)
+%f (1.666667); %.2f (1.67);  %0.f(2); %o (octal); %x; %X (hex)
+my_dict = {"dict_key1": 123, "dict_key2": 2.2 };  print ("%(dict_key1)s, %(dict_key2)2.1f" % (my_dict));
+hex(); oct()                    # convert to hex or oct
+print("-"*60)                   # -----------------------------  (x60)
+for line in strOfLines.split('\n'): print line           ### [ line1, line2, line3 ]
+for line in strOfLines.splitlines(True): print line   ### will include \n [line1\n, line2\n]
+[ ---  end  ---- ]
+
+==== [ topic ][ print class ] ===
+[ --- start ---- ]
+class aaa: def __repr__(self): "This will be printed when >>>aaa"
+[ ---  end  ---- ]
+
+==== [ topic ][ optparser ] better than getopt ===
+[ --- start ---- ]
+from optparse import OptionParser
+xxx = OptionParser(usage="my usage")   #if no usage provided, default will be used
+xxx.add_option('-q','--qt',dest="quiet",action="store_true",default=False,help="xx")
+xxx_g = xxx.add_option_group('Logging options')
+xxx_g.add_option('-q','--qt',dest="quiet",action="store_true",default=False,help="xx")
+xxx.print_usage()
+(opt, args) = xxx.parse_args(args)   ## args will hold params passed by user, opt hold --var=value by user
+if opt.quiet == True:
+        parser.add_option("-f", "--file",action="store", type="string", dest="filename")
+[ optparser ][ action type ]
+"store_const" store a constant value
+"append" append this option’s argument to a list
+"count" increment a counter by one
+"callback" call a specified function
+[ ---  end  ---- ]
+
+
+==== [ topic ][ subprocess and bash ] ===
+[ --- start ---- ]
+import subprocess
+subprocess.call("ls -l", shell=True)
+out = p.stdout.read().strip() #remove whitespace
+out = p.stdout.read() ## this process will wait till the child exit
+return out #This is the stdout from the shell command
+p = subprocess.Popen('echo "to stdout"', shell=True,stdout=subprocess.PIPE)
+stdout_value = p.communicate()[0]
+(stdoutdata, stderrdata) = p.communicate()
+p.poll() ; print p.returncode     # call poll to get exit status of terminated child process
+if p.wait() != 0:  ##wait() return value from poll() and wait(),  error if not equal 0
+subprocess.Popen(cmd,shell=True) #don't wait for child to exit
+[ ---  end  ---- ]
+
+==== [ topic ][ process ] ===
+[ --- start ---- ]
+import os
+pid = os.fork();if pid == 0: print ("I'm child"); os.exec1('/bin/cat', 'cat', 'temp.txt");else: print ("I'm parent"); os.wait()
+win: spawnl, spawnle, spawnv, spawnve (l=list of param, e=dict of environment var)
+linux: (win)+spawnlp, spawnlpe, spawnvp, spawnvpe (p=path, v=vector of list, allow a cmd to be run with very diff cmd fm 1 instance to next w/o needing to alter the program)
+ifsys.platform=='win32':cmd=r"c:\winnt\system32\cmd.exe";os.spawnv(os.P_WAIT,cmd, [])
+if sys.platform=='linux2':cmd='/bin/uname';os.spawnv(os.P_WAIT,cmd,['uname', '-a'])
+use os.P_ (instead of os.__WAIT) to allow program to run on its own instead of waiting it
+[ ---  end  ---- ]
+
+==== [ topic ][ thread ] ===
+[ --- start ---- ]
+fork/spawn is too much effort, esp when program is large (fork copy everything to new)
+fork no procedure to let programs do many things at the same time
+fork will be tricky on multiprocessor (parent & child shared data, but child run indepen...)
+network server or GUI use threads more
+from threading import Thread;import time;def myfunc(str, period): while 1: print str; time.sleep(period); thread.start_new_thread(myfunc,("Thread No:1",2))
+lock=thread.allocate_lock();  ## allocate mutex lock
+lock.acquire()    ## after allocate lock, acquire it using this, those din get lock, will wait
+lock.release()    ## release after acquire lock
+class MyThread(Thread): def __init__(self,bignum): Thread.__init__(self); self.bignum=bignum; def run(self): ...
+def test():bignum=1000; thr1=MyThread(bignum); thr1.start(); thr1.join();
+thread only start after xxx.start()
+xxx.join() make calling function to wait for thread to return
+[ ---  end  ---- ]
+
+
+==== [ topic ][ random ] ===
+[ --- start ---- ]
+from random import choice; x = choice [1,2,3,'ab', [2,2,7]];    # choice randomly select, x could be str, int, list..
+x.myfunc()    # use this if all the str, int and list class have defined myfunc(); thus we dun care of x type
+[ ---  end  ---- ]
+
+==== [ topic ][ scope ] [ namespace ] ===
+[ --- start ---- ]
+x=1; scope = vars() ; scope['x'] => 1; scope['x'] +=1 => 2   ## vars() returns invisible dictionary of variables
+if local and global variable has the same name, global is shadowed by local (local win)
+globals()['parameter']           #  to get global variable parameter while inside a function that has 'parameter' local var
+global x                               # declare this inside function if the function will alter the global var's value
+[ ---  end  ---- ]
+
+==== [ topic ][ object ] [ polymorphism ] ===
+[ --- start ---- ]
+def myfunc(object):
+	if isinstance(object, tuple): xxx
+	if isinstance(object, dict): xxx
+object.myfunc()  #flexible & let the different type of object handle the method by themself, e.g. 'abc'.xx(), [1,2].xx()
+don't destroy polymorphism with ( type, isinstance, issubclass ) 
+[ ---  end  ---- ]
+
+==== [ topic ][ type ] [ isinstance ] [ issubclass ]  ===
+[ --- start ---- ]
+issubclass (subclass, superclass)   # will return true
+subclass.__bases__                       # return superclass
+what-class-am-i.__class__             # return the class type
+type(xxx)                                      # return the type of xxx
+[ ---  end  ---- ]
+
+==== [ topic ][ encapsulation ] ===
+[ --- start ---- ]
+Class xxx: def __inaccessible(self): print "only obj of xxx can access me"; def accessible(self): self.__inaccessible()
+s=xxx(), s.__inaccessible   # throw error
+xxx.__xxx__inaccessible      # to really get access to private method, append __<className>__ as prefix
+def _thisIsJustConvetionAsPrivateMethod:     # however, it will not imported by * (from <module> import *)
+[ ---  end  ---- ]
+
+==== [ topic ][ function ] ===
+[ --- start ---- ]
+a=1; b=a_func; callable(a)=>0; callable(b)=>1        # callable check if it is a function (return 1)
+def a_func:
+				'a_func usage message'
+a_func.__doc__                      # return 'a_func usage message', also look at help(square)
+file.readlines.__doc__
+pass by reference: def inc(x): x[0]=x[0]+2;   ##  test @ a=[10]; inc(a)   # now a=>[12]
+def b_func(param_a, param_b):   ## calling b_func(param_b="hi", param_a="thanks") position doesn't matter here
+def c_func(param_a="i have a default value if no argument pass me")
+def d_func(*variable_arguments): print varialbe_arguments       # variable argument
+d_func(1) => (1,) ; d_func(1,2) => (1,2)
+def e_func(**dictionary_arg): print dictionary_arg                     # get key=value argument
+e_func(x=1, y=2) => {'x':1, 'y':2}
+def ff(x,y): print x+y            ## ll=(1,2); ff(*ll); =>3 ; this is to distribute param 
+def ff(x=1, y=2): print x+y   ## dd = {'x':5, 'y':3}; ff(**dd); =>8   ## dictionary distribution
+[ ---  end  ---- ]
+
+==== [ topic ][ Class ] ===
+[ --- start ---- ]
+@staticmethod
+def myclass (args):
+f=Foo(), type(f)
+Foo.my_classmethod(); f=Foo();f.my_classmethod();b=Foo.my_classmethod();b();
+a=f.addval(); a();  # a is a method bound to f
+f.__doc__ or f.func_doc, f.__name__ of f.func_name, f.__dict__ or f.func_dict # function attributes, f.func_defaults # tuple of default args, f.func_globals
+attributes for method obj: m.__doc__, m.__name__, m.im_class # class in which this method was defined, m.im_func # func obj implementing the method, m.im_self # instance associated with the method
+x(args) == x._-call__(args)
+class MultipleInheritanceClass (ParentClass1, ParentClass2, ...)
+class MyClass: var=5; obj1=MyClass(); obj2=Myclass(); Myclass.var=10; ## now obj1.var=10; ## obj2.var=10; change obj1.var=20 # any further change on var will not change obj1.var as var already instantiated
+kwargs=keyword arguments, *args=arbitrary of argument
+def do_something_else(a, b, c, *args, **kwargs): print a, b, c, args, kwargs
+my_dict=[1,2,3]; do_something_else(*my_dict, 4,5,6,7,8,9, timeout=1.5)
+class Myclass: myvar=5;hasattr(Myclass, myvar) ## if class has prop/method,return True
+base class should inherit from object, although it is optional 
+class MyBaseClass(object):inherits the most basic container class obj (just a place holder)
+class myClass(inheritedClass1, inheritedClass2): xxx            # multiple inheritance
+if both inheritedClass1 and inheritedClass2 have xx func, inheritedClass1 which is param1 win
+callable(getattr(instance, 'instanceMethodThatMayExist', None))
+no constructor overloading: trick  def __init__(self, c):if isinstance(c, int): ...do stuff... elif isinstance(c, list): ...
+[ ---  end  ---- ]
+
+
+==== [ topic ][ Modules ][ import ] ===
+[ --- start ---- ]
+module type is a container that holds obj loaded with import statement
+import div             #now can use div.xx_method
+import div as foo   #now can use foo..xx_method  (import module and use diff name)
+from div import divide  # import specific definition only, now can use divide(param)
+from div import *
+m.x ==  m.__dict__["x"]
+m.__dict__, m.__doc__, m.__name__, m.__file__, m.__path__
+from xxx import *        # will import all modules in __all__; to limit what user will import, modify __all__ at source, will not import module start with _xxx
+__all__=['module1_to_be_exported', "mod2"...]           ## put this @ xxx.py
+[ ---  end  ---- ]
+
+[ dynamic class ]
+type(name, bases, dict)                 ## create a new class X, inherit bases class, with variable dict
+X = type('X', (object,), dict(a=1))      ## same as            class X(object): a = 1
+type(object)                                   ## return the type of object, recommend to use isinstance(obj, classinfo)
+
+[ Exceptions ]
+try:
+    f = open("file.txt", "r")
+except IOError, e:
+    print e
+try os.mkdir(repodir);except OSError, e: print>>sys.stderr,'mkdir err:%s' % (e.strerror)
+TypeError, IndexError, KeyError, IOError(file not found), SyntaxError, ValueError(wrong value type)
+import exceptions; dir(exceptions)
+class MyCustomException(Exception): pass;    .... except MyCustomException:....
+try: ... except IOError:....; except TypeError:...                # multiple exception handling
+try: ... except (IOError, TypeError): ....                            # handle all exception in one
+try: ... except (IOError, TypeError), e: ...                         # get the exception object as e
+try: ... except: ...                                                               # catch all exception
+try: ... except: ... else: ...                                                   # else will be exec if everything is good
+raise Exception('Error!'); raise Exception, 'Error!'           # both are same
+try: ... finally: ##cleaning here, will always get executed even if try fails
+try: ... except (KeyError) as error: print ("no key %s found " % error)
+
+[ special methods ] [ property ]
+
+__len__(self)
+__getitem__(self, key)                        # called when val = my-seq[5]; val = my-dict["key"]
+for sequence, key should be an integer (zero to n-1 or negeative for counting from end)
+for mapping, anykind of key
+__setitem__(self, key, value)             # called when my-seq[5]="a"; my-dict["key"]="a"
+__delitem__(self,key)                        # called when del my-seq[5]; del my-dict["key"]
+def setCo(self,coor):self.x, self.y=coor; def getCo(self,coor):return self.x,self.y;coor=property(getCoor, setCoor)
+Iterator: need def next(self): self.val += 1; def __iter__(self): return self
+Iterator sometimes is better than list, especially when the length of list is long/infinite (memory)
+[ generator ]
+
+contains yield
+each time a value is yield (temporary return), it stops at that point and continue for next statement
+
+
+[ glob ][ expanding wildcards in filename pattern ]
+import glob
+print glob.glob('dir/*') #not recursing into dir/subdir/*
+print glob.glob('dir/*/*') #include dir/subdir;                       # glob.glob("*/*.txt")
+print glob.glob('dir/file?.txt')
+*=any zero/more matches; ?=1 char; [xxx]=any x char inside; [!xyz]=not x or y or z char
+
+[ regular expression ]
+import re
+non-greedy *?, +?, ??
+inside []:  
+the special forms and special characters lose their meanings and only the syntaxes described here are valid. e.g.: +, *, (, ),  are treated as literals inside [], and backreferences cannot be used inside [].
+'-' and ']' should be \- and \] when inside
+re.compile(pattern, [, flags])
+flags=re.IGNORECASE, re.LOCALE, re.MULTILINE, 
+re.DOTALL(re.S) (make . match newline too), re.UNICODE, re.VERBOSE(re.X)
+re.compile(r'^[a-z0-9A-Z_/\.-]+$')   #r=raw string (no reg exp magic)
+r"\n" is two char "\" and "n"       # r=raw string (no reg exp magic)
+print r"c:\new_file"'\\'   # as the last word of a can't be \, we use '\\' to escape it
+p = re.compile('[a-z]+') ; m = p.match('tempo')
+m.group()  # all matches, "tempo" ; m.start(), m.end() # (0, 5) ; m.span() # (0, 5)
+print re.search(r"]", "]").start()  ## 0; print re.search(r"]", "]").end()   ## 1, end() already plus 1 to next char
+result = re.match(pattern, string); # use re.compile() if going to reuse this obj later
+re.search(r".*\.pdf", path)     #\. escape dot
+reg_obj = re.compile(r" *([.a-zA-Z0-9-_/]*)"); #match <space>/.../abc.txt
+reg_obj2 = re.compile(" *([.a-zA-Z0-9-_/]*) *(.*[0-9]*) ([-+]*)")
+reg_obj_minus = re.compile(r"[-]+quot;)
+reg_obj_plus = re.compile(r"[+]+quot;)
+reg_obj2.match(my_str).group()  # all matches
+re.match(r"(ha)(he)", "hahehoho").group()==hahe (group()==group(0))group(1)=ha
+reg_obj2.match(my_str).group(1) # first parenthesis matches ([.a-zA-Z0-9-_/]*) 
+(full match) re.match(r"c", "abcde") (no match) 
+(partial) re.search(r"c", "abcde") (match "c")
+res=re.search(r"(aa(bb)ee)", "aabbee").group(2)  == (bb)
+(?iLmsux)  iLmsux is the flag argument for re.compile()
+(?:....) non-grouping version of parenthesis, not callable after this
+(?P<grp_name>...) give a name. e.g. (?P<id>[a-zA-Z_]\w*); m.group('id'); (?P=id)
+(?P=grp_name) match whatever text that was matched earlier group named grp_name
+comment (?#...) ignored
+positive look ahead:(?=...)match if ...match next. e.g. ha(?=he): hahe=match, hathe=x
+negative look ahead: (?!...)match if it is does not match. e.g.ha(?!he): hahe not match
+positive lookbehind:(?<=...)match only if preceded by.e.g.ha(?<=he):haihe not match
+negative lookbehind:(?<!...)match if it isn't preceded by,e.g.(?<!he)ha: heha not match
+(?(id/name)yes-pattern|no-pattern) use yes if (id/name) exist, else no (optional)
+(<)?(\w+@\w+(?:\.\w+)+)(?(1)>)match <xx@yy.zz>,xxx@yy.zz, not <xx@yy.zz
+reg_bw=re.compile(r";(W|B)\[([^\]]*)\]")       # to use [ or ], need to escape it \[
+a=fileter((lambda s: re.search(r"xxx", s), ('axxx', 'bxxx'))
+print re.match("xxx\\\]", "xxx\]")       # match
+print re.match(r"xxx\\]", "xxx\]")       # match
+re.match must always match first part... ?
+print re.match(".*SYS", "xxxSYSyyy").group()            # result = xxxxSYS 
+print re.match(".*SYS.*", "xxxSYSyyy").group()            # result = xxxxSYSyyyy 
+
+[ help ] [ debug ] [ doctest ] [unittest ] [ PyChecker ] [ PyLint ] [ winpdb ][ inspect ]
+help(module_name)   #e.g. help(dir)
+os.fstat.__doc__
+pydoc xxx   (run outside interpreter, e.g. in bash shell)
+doc: how to call func, what parames needed, and return type, default value for param
+doc: purpose of class, and how to use the obj of the class
+doc: any condition to call the functino, any side effect (e.g. erasing file)
+doc: exception raised and what reasons
+dir(show_all_my_method and attribute), e.g. dir(self.manifest); dir(__builtins__); dir(sys)
+'_Load', 'projects', 'remotes', 
+self.manifest.__dict__             ## will show the attribute and its value
+'name': u'platform/bionic', 'bare_ref':
+inspect                                     # gui browse-able object
+def dump(obj):  for attr in obj):	print "obj.%s = %s" % (attr, getattr(obj, attr))
+print vars(your_object) 
+put debug msg inside if __debug__: my_debug(); then in production, run python with -O
+import unittest, my_math    # my_math is module under unit testing
+unittest.main() # will create all subclasses of TestCase and run all methods whose names start with testXxx
+unittest.TestCase  # is the parameter pass to the test function
+can define startUp and tearDown that will run b4 and af each of the test methos (init & cleanup)
+embedded test scenario and result inside the docstring, then run with : -v = verbose
+python my_math.py -v   # without -v, and if everything is correct, no output show
+
+def my_test_func(a):
+	'''
+	>>> my_test_func(5)
+	25
+	'''
+	return a*a
+	
+if __name__ == "__main__":
+	import doctest
+	doctest.testmod()
+
+
+[ debug ][ callstack ]
+import inspect; inspect.stack()
+def getCallsite():	_, filename, linenum, _, _, _ = inspect.stack()[2];  return "%s:%d" % (filename, linenum)
+
+
+
+[ literals ]
+booleans
+integers: int()    ## convert str to int
+long integers
+floating-point numbers
+complex number (a=3+4j; r=a.real; )
+
+[ clipboard ]
+import win32clipboard
+win32clipboard.OpenClipboard()
+win32clipboard.EmptyClipboard()
+win32clipboard.SetClipboardText(text)
+win32clipboard.CloseClipboard()
+
+d=w.GetClipboardData(win32con.CF_TEXT)
+w.SetClipboardData(aType,aString)
+import os; s = popen('xsel').read()
+import os; os.popen('xsel', 'wb').write(s)
+
+[ lambda ] - unnamed function
+def f (x) : return x**2;   print f(8) ; ## 64
+g = lambda x: x**2; print g(8) ; ## 64
+def my_func(n): return lambda x: x+n; f=my_func(2); f(3); ## (3+2 = 5)
+g = my_func (6) ; g(5) ; ## (5+6=11) ; print my_func(11)(3); ## 11+3 = 14
+cannot have statement, only expression
+squares = map(lambda a: a*a, [1,2,3,4,5])   ## squares is now [1,4,9,16,25]
+
+[ map ] [ filter ] - never really need map and filter, use list comprehensions [ reduce ][ sum ]
+
+squares = map(lambda a: a*a, [1,2,3,4,5])   ## squares is now [1,4,9,16,25]
+squares = [number*number for number in [1,2,3,4,5]]     ## (cleaner and better)
+num_under_4 = filter(lambda x: x < 4, [1,2,3,4,5])  # return 1,2,3 (filter remove matched)
+numbers_under_4 = [number for number in numbers if number < 4]  ##(cleaner and better)
+squares = map(lambda x: x*x, filter(lambda x: x < 4, numbers))
+squares = [number*number for number in numbers if number < 4] ## (cleaner and better)
+reduce: repeat result with next elem, until one single value is reached
+numbers = [1,2,3,4,5]; result = 1; for number in numbers: result *= number
+result = reduce(lambda a,b: a*b, numbers)
+def cube(x): return x*x*x; map(cube, range(1, 3)) #[1, 8]  (iteration)
+>>> def f(x): return x % 2 != 0 and x % 3 != 0; filter(f, range(2, 8))  #[5, 7] eval true
+sum([1,2,3])             # return the sum of all elem in the list, (and tuple as well?)
+print map(lambda mylist: [mylist[1], mylist[0], mylist[2]], [[1,2,3],[4,5,6]]  # [[2,1,3],[5,4,6]]
+ 
+[ list comprehensions ]
+
+downside: entire lists stored in memory at once, use generator for large list (for xx in xxx)
+result = 'True' if test1 else 'False, test2=True' if+ test2 else 'Test1 & Test2=False'
+result = test and 'Test is True' or 'Test is False'  ## Test is True if test=True
+squares = [number*number for number in [1,2,3,4,5]]
+for y in (0,1,2,3): for x in (0,1,2,3): if x < y: print (x, y, x*y)   ## clumsy
+print [(x, y, x * y) for x in (0,1,2,3) for y in (0,1,2,3) if x < y]
+A list comprehension has the syntax: [ element for var(s) in list if condition ]
+A generator expression has the syntax: ( element for var(s) in list if condition ) ## ()
+elem=to_be_returned, var=temp_holder to assign cur list, condition=if true, include
+[x+x for x in range(6)]                    ## [0, 2, 4, 6, 8, 10]
+[x for x in range(6) if x%3==0]       ## [0, 3]
+[(x,y) for x in range(2) for y in range(1)]   ##[(0, 0), (1, 0)]
+a=['aa','bb']; b=['ab','bc']; [x+y for x in a for y in b if x[0]==y[0]]    ##  ['aaab', 'bbbc'] (not efficient as check all)
+a=['aa','bb']; b=['ab','bc']; dict_b={};
+for xx in b: dict_b.setdefault(xx[0],[]).append(xx);   ##setdefault update dict if key not exist, or do nothing if exist
+[x+y for x in a for y in dict_b[x[0]]]                         ## ['aaab', 'bbbc'] efficient, since use dict
+
+[ math ]
+from __future__ import division ;  9.0//4=2.0 (//=integer) ; 9.0/4=2.25
+-3**2=-9 ; (-3)**2=9
+import cmath ; cmath.sqrt(-1) = 1j
+a=3+4j; my_real = a.real
+
+[ sequence ]
+
+s[i]; s[i,j], s[i:j:stride], len(s), min(s), max(s)
+
+[ time ][ datetime ]
+import time ; import datetime
+time.sleep(2)
+time.clock()
+time.time()
+datetime.date.today().timetuple()  # time is zero, so use localtime
+today = time.localtime() # time.struct_time(tm_year=2011, tm_mon=5, tm_mday=17, tm_hour=11, tm_min=23, tm_sec=55, tm_wday=1, tm_yday=137, tm_isdst=0)
+datetime.datetime(2011, 5, 8, 12, 5)
+print("now is :", datetime.datetime.now())  ## 2011-05-17 11:26:51.901000
+
+[ calendar ]
+import calendar
+calendar.isleap(2012)                          ## return True
+calendar.monthrange(2012,2)             ## return (2, 29)
+print "Date:", datetime.datetime.now()   ## 2011-02-25 10:06:06.420968
+print now.strftime("%Y-%m-%d %H:%M")
+
+[ type and objects ]
+
+if a is b:    # a & b are same obj
+if a == b:   # a & b have same value
+if type(a) is type(b):   # type a and b same,  isinstance(obj, type) better than type() 
+import types; if isinstance(n, types.NoneType)
+if isinstance(f, file)
+
+[ reference counting and garbage collection ]
+
+a = 5 # ref count(rc) of a=1; b = a;  #rc=2;   c=[]; c.append(b); rc=3
+del a # rc=2; b=8  # rc=1;  c[0]=2; rc=0, garbage collected
+a = {}; b={}; a['b']=b; b['a']=a; del a; del b; # a & b contains a ref to each other, leak!
+
+[ any ] [ all ] [ zip ] [ max ] [ min ] [ sum ]
+
+any: if any one of the elem in list match, interpret as true
+if any(number < 10 for number in [1,10,12]): print 'True' # 'True!' if any one of elem < 10
+all: if all of the elems in a list match, interpret as true
+if len(numbers)==len([num for num in numbers if num < 10]):print 'True' # Output: 'True!'
+if all(num< 10 for num in numbers):print 'True'   # 'True!' if all elems in numbers < 10
+aa=['a', 'b', 'c'];bb=[1,2,3];cc=[1,4,9];my=zip(aa,bb,cc) # [('a',1,1), ('b', 2, 4), ('c', 3, 9)]
+for my_a, my_b in zip(aa,bb): print my_a, my_b
+zip take the smallest len; zip(range(3),xrange(10000))   ## [(0,0),(1,1),(2,2)]
+[ exec ] [ eval ]
+
+generate code on the fly, but is security hole; use scope to limit
+scope={}
+exec "func=1" in scope ## this will not override func as func; func(1)  ## still valid;
+scope['func']  ##=>1; len(scope) ##=>2; scope.keys() ##['func','__builtins__'] a lot __builtins__ func added
+eval return value of expr
+eval '6+2' ##=>8
+eval(raw_input('xx')) == input()
+
+[ operator ]
+no ||, &&, only "or" and "and" for logical operator
+no pre/post increment; use -= +=
+membership: "in" ; "not in"
+identity operator: "is"; "is not"
+
+[ macro ]
+os.path.abspath(__file__)
+
+[ __doc__ ]
+def myfunc(): 
+	 "xxx...."
+print my_func().__doc__   # will return xxx
+
+[ for ][ loop ]
+for i, line in enumerate(self.game_lines): print "i =",i              # i start from 0
+
+[ goto ]
+
+from goto import goto, comefrom, label
+goto .myLabel
+label .myLabel
+# ...code 1...
+label .somewhere
+# ...code 2...   (will not executed. comefrom is opposite to goto, this code will be skipped)
+comefrom .somewhere
+i = raw_input("Enter a, b or c"); if i in ('a', 'b', 'c'): goto *i
+label .a
+label .b
+
+
+[ installer ]
+create a setup.py with following content:
+from distutils.core import setup; setup(name='xxx', version='1.0', py_modules=['xxx'],)
+python setup.py sdist            # sdist=software distribution
+will create MANIFEST and dist/xxx.tar.gz;
+gunzip xxx.tar.gz; tar xvf xxx.tar; python setup.py install
+
+[ misc ]
+bisect implements binary search vy efficiently
+python like doesn't has ++? but have *=, += -= ?
+execfile("myhello.py")
+Ctrl+D, quit(), Ctrl+Z(win)
+if __name__ == '__main__': #evaluated as true if it is standalone
+space indent and tab indent are treated as different indentation (:set list to check)
+no multiple statement using ;
+'<' + word*5 + '>' #'<HelpAHelpAHelpAHelpAHelpA>; word = 'Help' + 'A'
+xx.pyc = python compiled
+unique list: l=list(set(yourlist))
+print "my arg=", arg             # fast way of print debug msg
+cat binary.xml | python kgp.py -g -   # load from standard input
+python is case sensitve
+chained condition: if 1 < x < 5:
+global var can be read inside function without declaration, to write global, declare it
+id(my_obj) gives the address of my_obj
+object(): Return a new featureless object. object is a base for all new style classes. It has the methods that are common to all instances of new style classes.
+False None 0 "" () [] {}             ## interpret will take as False
+assert 0 < age < 100                  ## throw if not fulfill
+sorted([4,3,2])                           ## return a new sorted list
+list(reversed('Hello!'))                ## ['!','o','l','l','e','H']; reversed return iterable obj, need to cast to list
+''.join(reversed('Hello!'))
+for large number, use xrange as xrange only calc when needed; range calc all number at once (slow if big)
+a=[1,2];b=a;a=None;b=None #[1,2] will be garbage collect, but a & b still there; del a; del b ## a & b deleted
+chr(49)                                      ##=>'1', char ascii value to char
+ord('1')                                      ##=>49, char to ascii value
+dict and set use hash table, if no value is associated with the key, use set instead
+num_or_str = input("i will assign type(str or number) based on your input")
+alwasy_str = raw_input("i am always assuming you use string")
+all means False to interpreter: False, None, 0, "", (), [], {}
+range(5) => (0,1,2,3,4,5)
+python -v                   ## verbose; can figure out which classes being called at init
+import sys, pprint, ;   pprint.pprint(sys.path)          ## figure out the sys path (which python will find all modules)
+look for site-packages  which is to be used for local-script
+import sys; sys.path.append('~/new-python-dir')   ## add to sys path, so that can import local module
+reload-or-forced-reimport=reload(my-module)     ## can use this to running program to load new change
+import imp; imp.reload(xxx)
+if __name__ == '__main__'                                  ## main app is named as __main__; hello.__nam__=='hello'
+
+[ tab completion ]
+import rlcompleter 
+import readline 
+readline.parse_and_bind("tab: complete")
+readline. <TAB PRESSED>
+
+[ environment variable ]
+set PYTHONSTARTUP to user command to be executed during interactive start-up
+for script, set the PYTHONSTARTUP variable and include this
+import os; filename = os.environ.get('PYTHONSTARTUP')
+     if filename and os.path.isfile(filename): execfile(filename)
+
+
+[ package ]
+A package is a directory with the special __init__.py file in it. The __init__.py file defines the attributes and methods of the package. It doesn't need to define anything; it can just be an empty file, but it has to exist. But if __init__.py doesn't exist, the directory is just a directory, not a package, and it can't be imported or contain modules or nested packages.
+kn: from xml.dom import minidom   (there is a dom directory with __init__.py file)
+
+[ references ]
+
+Alex Martelli
+http://code.activestate.com/recipes/langs/python/
+beginning python from novice to professional - magnus lie hetland - apress publisher
+
+[ tools ]
+pythoncard - codeEditory (shell F5)
+trick: remove front string
+  if branch.startswith('refs/heads/'):
+	branch = branch[len('refs/heads/'):]   #remove refs/heads
+
+
+variable
+●Variables not declared ahead of time
+●Implicit typing
+●Automated memory management: Reference counting, garbage collection
+●Variable names can be “recycled”
+●del statement allows explicit de-allocation
+●multiple assignment: first,second,third="cat"; first='c', second='a', third='t'
+
+if statement
+if exp1:
+elif exp2:
+else:
+
+List and Tuple: Array-like char
+Example:
+'an' in 'banana' 		# True
+'pine'+'apple'  		# pineapple
+'heart'*2				# 'heartheart'
+
+mylist = ['a', ['b', 'c'], 'd', 'e']
+'b' in mylist   		# False
+['b', 'c'] in mylist   	# True
+'d' in mylist  			# True
+'f' not in mylist 		# True
+",".join(mylist)		# Error! as item 1 is a list, not str
+mylist[1] = '2'			# ['a', '2', 'd', 'e']
+','.join(mylist)		# 'a,2,d,e'
+mylist[-1]				# 'e'
+mylist[::2]=['n1', 'n2']# ['n1', '2', 'n2', 'e']
+mylist.append('a1')		# ['n1', '2', 'n2', 'e', 'a1']
+mylist.extend(['e1', 'e2']) # ['n1', '2', 'n2', 'e', 'a1', 'e1', 'e2']
+del mylist[4:] 			# ['n1', '2', 'n2', 'e']
+mylist.insert(2,'i')	# ['n1', '2', 'i', 'n2', 'e']
+mylist.remove('n2')		# ['n1', '2', 'i', 'e']
+a=mylist.pop()			# a='e', mylist=['n1', '2', 'i']
+astr="a1, a2, a3"
+astr.split(",")			# ['a1', ' a2', ' a3']
+manipulating data in the list/tuple
+Example:
+for i, value in enumerate(mylist):   #i=list index, value=list value
+	print i, value
+# 0 n1
+# 1 2
+# 2 i
+newlist=sorted(mylist)	    # ['2', 'i', 'n1'], mylist not changed
+mylist.sort()						 # ['2', 'i', 'n1'], mylist changed
+mylist.reverse()
+
+# List Comprehensions, syntax [exp for var in list[for...|if...]]
+# exp=expression how we want to manipulate the result
+>>> int_list=[0,1]
+>>> char_list = ['a', 'b', 'c']
+>>> [(an_int, a_char) for an_int in int_list for a_char in char_list]
+[(0, 'a'), (0, 'b'), (0, 'c'), (1, 'a'), (1, 'b'), (1, 'c')]
+
+>>> list2=[['a','d','d'],['b','d','d'],['c','d','d']]
+>>> [row for row in list2]
+[['a', 'd', 'd'], ['b', 'd', 'd'], ['c', 'd', 'd']]
+>>> [myitem.upper() for row in list2 for myitem in row]
+['A', 'D', 'D', 'B', 'D', 'D', 'C', 'D', 'D']
+>>> [value for row in list2 for value in row if value is not 'd']
+['a', 'b', 'c']append vs extend
+>>> first = [10,20,30]
+>>> second = [40,50,60]
+>>> first.append([70,80,90])  # append could be of different type
+>>> second.extend([100,110,120])  # extend same type
+>>> first
+[10, 20, 30, [70, 80, 90]]
+>>> second
+[40, 50, 60, 100, 110, 120]
+>>>  
+
+set - union, subset, mutual exclusion
+has no index like list/tuple
+>>> a = set(['a', 'b', 'c', 'd'])
+>>> b = set(['c', 'd', 'e', 'f'])
+>>> a-b # those in a but not in b
+set(['a', 'b'])
+>>> b-a # those in b but not in a
+set(['e', 'f'])
+>>> a|b # union, in a or b
+set(['a', 'c', 'b', 'e', 'd', 'f'])
+>>> a&b # intersection of a and b
+set(['c', 'd'])
+Dictionary {}
+Mapping type
+key-value pairs
+myDict2 = {'key1':(10,20,30), 'key2':(20,30,40)}
+myDict['second']=20
+print myDict              #{'key1':'value1', 'second':'20'}
+>>> print myDict.keys()    #{'key1', 'second'}
+>>> print myDict.values()
+['value1', 20]
+>>> print myDict.items()
+[('key1', 'value1'), ('second', 20)]
+>>> print myDict['key1']    # value1
+for key in myDict:
+    print "key=%s, value=%s" %(key, myDict[key])   #'key1':'value1' \n 'second':'20'
+>>> myDict.get('key1')      #if we are sure key exists or python will throw err
+'value1'
+## if we are not sure whether the key exists or not, use <list>.get(key,default)
+>>> myDict.get('key2', 'return_this_val_if_key_not_exists')
+'return_this_val_if_key_not_exists'
+>>> dict2=myDict.fromkeys(myDict)    # create a blank copy of dict
+>>> dict2
+{'key1': None, 'second': None}
+>>> max(myDict)
+'second'
+>>> max(dict2)
+'second'
+>>> min(dict2)
+'key1'
+>>> len(dict2)
+2
+>>> del dict2['key1']
+>>> dict2
+{'second': None}
+>>> myDict.popitem()     # random item, no key needed
+>>> myDict.pop('key1')    # get and delete key specified 
+'value1'
+>>> myDict
+{'second': 20}
+>>> dict2.clear()    #removes all items
+>>> dict2
+{}
+for loop
+# Iterating over a str in (print each letter)
+for eachLetter in Text":
+    print  "current letter:", eachLetter
+	#T, e, x, t
+Exception Handling:
+try:
+	try_suite # watch for exceptions here
+except Exception[, reason]:
+	except_suite   # exception-handling code
+example:
+try:
+    f = file(u"C:\\Data\python\\delete.txt", "w+")
+    print >> f, "Welcome to Python"
+    f.seek(0)
+    print "File =", f.read()
+    f.close()
+except IOError, reason:
+    print reason
+string
+str() repr() return identical results in many cases
+repr() has a shortcut notation of `xx`, e.g. `mystr`
+s = "my string is" + str('haha')
+s = "my string is" + repr('haha')
+s = "my string is" + `haha`
+multiple line, triple single quote/double quote
+''' ... line1..
+...line2...
+.... '''
+
+string manipulation
+
+join
+>>> sep="-"
+>>> sep.join("haha")
+'h-a-h-a'
+>>> sep.join(["haha", "hehe"])
+'haha-hehe'
+>>> "haha".join(["hehe", "hoho"])
+'hehehahahoho'
+
+strip, rstrip, lstrip remove the trailing char
+>>> ' spacious '.rstrip()
+' spacious'
+
+capitalize(), lower(), title()
+
+center(), ljust(), rjust(), zfill()
+>>> s3='center text'
+>>> s3.center(20,'*')
+'****center text*****'  #total=20 char, rest of space is filled with *
+>>> s3.zfill(20)
+'000000000center text'
+
+format() 
+>>> mystr="value {0} is: {msg}"
+>>> mystr.format('haha', msg='good')
+'value haha is: good'
+
+
+{xx[!(s|r)[:padded(^|>|<)]} ^=center, >=right-aligned, <=left-aligned
+{xx!s} = convert to string
+{xx!s:*^3}   #if y is given, *y*
+{xx!s:0>4}   #if 42 is given, 0042
+{xx!s:!<10}    #if [haha] is given, [haha]!!!!
+
+replace()
+>>> "example text".replace("ex", "--")
+'--ample t--t'
+
+find()
+start=5
+end=15
+>>> "example text".find("ex",start,end)
+9
+
+index(), rindex()
+
+count()
+
+regular expression
+import re
+greedy *(0 or more), +(1 or more), ?(0 or 1): can repeat as long as there are matches
+{m, n}; m to n repetitions of preceding exp
+{m, n}? (non-greedy)
+?: stop sub-pattern from being returned
+\d=digit, \D=non-digit, \s=whitespace, \S=any non-whitespace, \w=alphanumeric, \W
+\<num>=refer to match group (...), \A=match at start of str, \Z=match at end of str, \b=match an empty str but only at the stat or end of a word, \B=not \b
+^=start of sequence, $=end
+[^...] = negation of ...
+re.sub(pattern, new_str, string, count)  #replace up to count time
+re.subn = re.sub + return num of replace made in the form (new_str, number)
+>>> re.split("<.+>", "<haha you <aa> hoho >")
+['', '']
+>>> re.split("<.+?>", "<haha you <aa> hoho >")
+['', ' hoho >']
+sys
+
+import sys
+
+def get_args():
+	result = ['\t'.join([str(i), str(arg)]) for i, arg in enumerate(sys.argv)]
+	print result
+	return result
+
+def get_input():
+	result = sys.stdin.read()
+	return result
+
+get_args()
+#get_input()
+sys.stdout.write("haha")result:
+['0\tmy_sys.py', '1\tmy', '2\targ']
+haha
+
+import sys
+sys.stdout.write("Enter your name : ")
+name = sys.stdin.readline()
+
+# the code above can be shortened to
+name = raw_input("Enter your name : ");
+os
+
+os.execv(path, args) 
+os.execve(path, args, env) 
+os.execvp(file, args) 
+os.execvpe(file, args, env) 
+These functions all execute a new program, replacing the current process; 
+they do not return
+subprocess
+
+
+
+optparse
+
+from optparse import OptionParser
+
+def main():
+	usage = "usage: %prog [options] arg"
+	parser = OptionParser(usage)   #when --help is used or when wrong opt
+	parser.add_option("-f", "--file", dest="filename",
+			help="read data from FILENAME")  # default action="store"
+	parser.add_option("-v", "--verbose",
+			action="store_true", dest="verbose")  # set options.verbose=True
+	parser.add_option("-q", "--quiet",
+			action="store_false", dest="verbose")
+
+    #parse_args(arg) arg (default) = sys.argv[1:]
+	(options, args) = parser.parse_args()  #options.filename, options.verbose..
+	if len(args) != 1:
+		parser.error("incorrect number of arguments")
+	if options.verbose:
+		print "reading %s..." % options.filename
+
+if __name__ == "__main__":   #if it is standalone(./xxx.py), then call main
+	main()I:\kn>myrepo.py --file aaa -v myarg
+reading aaa...
+
+group = init_optparse.add_option_group('Logging options')
+group.add_option(...)
+
+# new group
+group = init_optparse.add_option_group('Manifest options')
+
+# print help
+init_optparse.print_usage()
+
+store="callback"  #for callback function
+parser.add_option("-c", action="callback", callback=my_callback)
+def my_callback(option, opt, value, parser):
+Function and Classes:
+support:
+default arg: def calcTax(amount, rate=0.0275):
+variable length args: def tupleVarArgs(arg1, arg2='defaultB', *theRest):
+multiple return values
+inner function
+id() - every object has a diff id
+type() - to check if it is a class object
+def __str__(self)
+def __repr__(self)
+property(fget=None, fset=None, fdel=None, doc=None) : 
+
+Function: variable length args
+def tupleVarArgs(arg1, arg2='def aultB', *theRest):
+	print "formal arg1: ", arg
+	print "formal arg2: ", arg
+	for eachXtraArg in theRest:
+		print 'another arg: ', eachXtraArgFunction: variable length args 2 (a dict)
+
+if both single (*) and double (**) are used, single(*) must come first
+def new_function(**mydict):
+    print mydict
+>>> new_function(**myDict)
+{'second': 20}
+
+>>> def new_function2(*args):
+	print args
+>>> my_args=(1, 2, 3)
+>>> new_function2(*my_args)
+(1, 2, 3)
+
+Function: global variable
+def foo():
+    global myvar   #cannot initialize here
+    myvar = 100
+
+Classes:
+constructor:  __init__
+called immediately after the object is init
+no value may be returned
+self: 
+pass ref to current instance
+not needed for static or class methods
+syntax:
+class MyObject(bases):
+	“Documentation text”
+	class_suitee.g. 
+class MyData(object):
+	pass # required syntactically
+
+mathObj= MyData()
+mathObj.x= 4  #coor x is an attribute of object class
+mathObj.y= 5
+print mathObj.x* mathObj.y # 20Class: static var
+class ClassWithStaticVar(object):
+	foo = 100  #static
+
+print ClassWithStaticVar.foo
+ClassWithStaticVar.foo +=1subclass
+super() to refer to parent
+super().__init__()
+class item:
+    price=0
+
+class gem(item):
+	print('gem created')
+
+diamond=gem()
+diamond.price=10
+note: to end a function in interpreter, just de-indent the line
+file
+f = open("foo.txt")
+line = f.readline()
+while line:
+    print line
+    line = f.readline()
+f.close()
+
+# python shorthand
+for line in open("foo.txt")
+    print line
+
+write to a file
+f = open("foo.txt")
+while year <= numyears:
+    principal = principal*(1+rate)
+    print >>f, "%3d  %0.2f" % (year, principal)
+    year +=1
+f.close()
+
+note: the print >> f, xxx can be replaced with
+f.write(%3d   %0.2f\n" % (year, principal))
+
+r+, w+ (truncate), a+, "aU", "rU"... U=python can take \r or \r\n
+sample usage
+
+script start
+#!/usr/bin/env python
+#!/usr/bin/env python 3.1
+# -*- coding: encoding -*-
+
+e.g. # -*- coding: ascii -*-
+
+startwith()
+gender = input('your gender? (male/female/unsure):')
+gender = gender.lower()
+if gender.startwith('f'):
+
+random
+import random
+my_int=random.randint(3,33)   # include both end
+
+range
+for rolls in range(0, 10):
+
+input
+total_players=input('How many players?') or 2
+
+exec
+>>> list_numbers=[1,2,3,4]
+>>> mycode = "for num in list_numbers: print(num)"
+>>> exec(mycode)
+1  2  3  4
+
+eval evaluate if the expression is true or false
+>>> result=eval('3 > 5')
+>>> print result
+False
+
+time
+import time
+now=time.strftime(%Y-%m-%d)
+
+misc
+>>> execfile("helloworld.py")   #run file inside interpreter
+
+getattr
+# both are same (getattr can be used on any obj that support dotted operation)
+value = obj.attribute 
+value = getattr(obj, "attribute")
+result = obj.method(args)
+result = getattr(obj, "method")(args)
+func = getattr(obj, "method", None)
+if func: func(args)
+# check if the function is indeed callable
+func = getattr(obj, "method", None) 
+if callable(func): func(args)
+
+yield
+
+def counter(low, high):
+	current = low
+	while current <= high:
+	yield current # return result and continue this function
+	current += 1
+
+for c in counter(3, 8):
+	print c
+
+Iterator Object
+
+f = open('x')
+for l in f.readlines(): ## == for l in f
+	print len(l) == map(len, f)
+	
+class fibnum: 
+	def __init__(self):
+		self.fn2 = 1
+print example
+
+width=35
+price_width=10
+item_width=width-price_width
+header_format='%-*s%*s'
+format='%-*s%*.2f'
+
+print ('='*width)
+print (header_format % (item_width, 'item', price_width, 'price'))
+print ('-'*width)
+print (format % (item_width, 'Durian', price_width, 0.5))
+
+===================================
+item                           price
+-----------------------------------
+Durian                         0.50
+read() vs readline() vs readlines()
+
+read() = read the entire file at once
+readlines () = read the entire file at once, & parse into a list of lines
+readline() = read one char at a time, much slower than readlines()
+xreadlines() = read one line at a time
+
+therefore only use readline() to read a big file that might exceed free memory
+
+for line in f.read().split('\n'):  == for line in f.readlines():
+for line in f.xreadlines():	## for big file
+*
+
+
+
+
+thread
+
+
+from threading import Thread
+class Retriever(Thread):
+	def __init__(self, URL):
+	    self.URL = URL
+	    Thread.__init__(self)
+	def run(self):
+	    self.page = self.getPage()
+
+retriever = Retriever('http://www.foo.com/')
+retriever.start()
+while retriever.isAlive():
+	sleep(1)
+URLs = retriever.getLinks()
+
+
+def Trace(fmt, *args):
+	print >>sys.stderr, fmt % args
+
+## generate an infinite sequence
+def checkIndex(key):
+	if not isinstance(key, (int,long)): raise TypeError
+	if key < 0: raise IndexError
+
+class AriSeq:
+	def __init__(self, start=0, step=1):
+		self.start = start
+		self.step = step
+		self.change = {}
+
+	def __getitem__(self, key):
+		checkIndex(key)
+		try: return self.changed[key]
+		except KeyError:
+			return self.start+key*self.step
+
+	def __setitem__(self, key, value):
+		checkIndex(key)
+		self.changed[key]=value
+	
+
+switch in python (python don't have native switch, they use dictionary)
+
+def operation1():	print "func1"
+def operation2():	print "func2"
+def errhandler():	print "error handler"
+
+func_ptr={"use_1": operation1, "use_2": operation2}
+user_input=raw_input("use_1 or use_2?")
+func_ptr.get(user_input,err_handler)()
+
+switch in python2
+def f(x): try:
+				return {'a': 1,'b': 2,}[x]
+			except KeyError:
+				return 'default'
+
+def f(x):
+    return {
+        'a': 1,
+        'b': 2,
+        }.get(x, 9)    # 9 is default if x not found
+
+switch in python3
+class SMTP:
+    def lookupMethod(self, command):
+        return getattr(self, 'do_' + command.upper(), None)
+    def do_HELO(self, rest):
+        return 'Howdy ' + rest
+    def do_QUIT(self, rest):
+        return 'Bye'
+
+SMTP().lookupMethod('HELO')('foo.bar.com') # => 'Howdy foo.bar.com'
+SMTP().lookupMethod('QUIT')('') # => 'Bye'
+
+Speed
+Lookups in lists are O(n), lookups in dictionaries are amortized O(1), with regard to the number of items in the data structure. If you don't need to associate values, use sets.
+Memory
+Both dictionaries and sets use hashing and they use much more memory than only for object storage. According to A.M. Kuchling in Beautiful Code, the implementation tries to keep the hash 2/3 full, so you might waste quite some memory.
+If you do not add new entries on the fly (which you do, based on your updated question), it might be worthwhile to sort the list and use binary search. This is O(log n), and is likely to be slower for strings, impossible for objects which do not have a natural ordering.
+
+
+=== [ topic ][ unsorted ] ===
+{{{
+[ --- start ---- ]
+/// remove everything after \t
+>>> l = ['element1\t0238.94', 'element2\t2.3904', 'element3\t0139847']
+>>> [i.split('\t', 1)[0] for i in l]
+['element1', 'element2', 'element3']
+[ ---  end  ---- ]
+}}}
