@@ -15,6 +15,7 @@ xml_cmd='find . -name "*.xml" | /bin/egrep -v bin | /bin/egrep -v values-v*'
 java_cmd='find . -name "*.java" | /bin/egrep -v R.java\|BuildConfig.java'
 load_vim_host='gvim --servername %s --remote-tab-silent '
 find_cmd='find . -name '
+sleep_time=0.9
 
 #----------------- parseCmd() ----------------#
 ## parse the command line arguments
@@ -109,19 +110,27 @@ def main():
 			#load_vim_arr.pop()
 
 			execBash(load_vim+myfile, is_print=True, no_output=True);
-			time.sleep(0.9);
+			time.sleep(sleep_time);
 	elif ( choices == "c"):
 		print("Operation cancelled")
 	elif ( choices == ""):
 		print("Opening the first document")
 		execBash(load_vim+result_arr[0], is_print=True)[0];
 	else:
+		is_digit = False
 		for choice in choices.split():
 			if choice.isdigit():
 				execBash(load_vim+result_arr[int(choice)], is_print=True, 
 							no_output=True)[0];
-			elif (s.__contains__(choices)):
-				execBash(load_vim+result_arr[i], is_print=True, no_output=True)[0];
+				is_digit=True
+				time.sleep(sleep_time);
+		if ( not is_digit ):
+			for i,s in enumerate(result_arr):
+				if (s.__contains__(choices)):
+					execBash(load_vim+result_arr[i], is_print=True, 
+								no_output=True)[0];
+					time.sleep(sleep_time);
+
 
 #----------------- standalone() ----------------#
 ## if standalone, i.e. called directly from shell
