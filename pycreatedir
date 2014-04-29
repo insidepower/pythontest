@@ -1,0 +1,64 @@
+#!/usr/bin/python
+import subprocess
+from optparse import OptionParser
+import os
+import re
+import shutil
+
+def parseCmd():
+    usage = ""
+    parser = OptionParser(usage)
+    parser.add_option("-s", "--simple-rename", dest="is_simple_rename",
+            action="store_true", default=False,
+            help="simple rename only");
+    parser.add_option("-d", "--start-number",action="store", type="int",
+            dest="start_number",
+            help="start number/index of filename")
+    parser.add_option("-m", "--match_str",action="store", type="string",
+            dest="match_str",
+            help="only rename matched string")
+    return parser.parse_args()
+
+## execute the bash command
+#def execBash(cmd):
+#       print cmd
+#       p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+#       out = p.stdout.read()
+#       #print out
+#       return out
+def execBash(cmd, is_suppress=False, is_print_cmd=False):
+  if is_print_cmd:
+    print cmd
+  p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
+  #(stdoutdata, stderrdata) = p.communicate()
+  stdoutdata = p.communicate()[0]
+  p.poll()
+  if (p.returncode != 0) and (not is_suppress):
+    print ("\033[1;31mWarning!! command (%s) not ended properly."
+                          "exit status = %d\033[0m" %(cmd, p.returncode))
+  #out = p.stdout.read()
+  #print out
+  return (stdoutdata, p.returncode)
+
+def createDir(start, end):
+    for i in range(start, end):
+        dirname = "%04d" % i
+        print dirname
+        if not os.path.exists(dirname):
+            os.makedirs(dirname)
+            reg_obj=re.compile(r".*%s.?.jpg" % (dirname, ))
+            # look for corresponding files and move into correct folder
+            files = [f for f in os.listdir('.') if os.path.isfile(f)]
+            for f in files:
+                result = reg_obj.match(f)
+                if result:
+                    print ("file match %s " % (f,))
+                    shutil.move(f, dirname)
+
+
+## if standalone, i.e. called directly from shell
+if __name__ == '__main__':
+    (options, args) = parseCmd()
+    createDir(int(args[0]), int(args[1]))
+
+#vim: filetype=python

@@ -57,6 +57,8 @@ def execBash(cmd, is_suppress=False, is_print=False, no_output=False):
 def main():
 	(options, args) = parseCmd()
 	result_arr = []
+        result_java = None
+        result_xml = None
 
 	### specify new remote server
 	if options.server:
@@ -69,6 +71,7 @@ def main():
 		result_command = \
 			execBash(find_cmd+args[0], is_print=True)[0]
 		result_arr.extend(result_command.split());
+                print "main: use args"
 	else:
 		# use default cmd which look for java and xml
 		result_xml = execBash(xml_cmd)[0];
@@ -76,6 +79,7 @@ def main():
 
 		result_arr = result_xml.split();
 		result_arr.extend(result_java.split());
+                print ("main: result_java %s" % (result_java))
 
 	## determining application to use
 	if options.app=="":
@@ -99,18 +103,31 @@ def main():
 			# wait for 0.5 seconds
 			time.sleep(0.5);
 	elif ( choices == "x"):
-		for i, myfile in enumerate(result_xml.split()):
-			execBash(load_vim+myfile, is_print=True, no_output=True)[0];
-			time.sleep(0.3);
-	elif ( choices == "j"):
-		load_vim_arr = load_vim.split()
-		for i, myfile in enumerate(result_java.split()):
-			#load_vim_arr.append(myfile)
-			#execBash(load_vim_arr, is_print=True, use_shell=False);
-			#load_vim_arr.pop()
+            if result_xml is None:
+                # arg is passed in
+                result_final = result_arr;
+            else:
+                result_final = result_xml.split();
 
-			execBash(load_vim+myfile, is_print=True, no_output=True);
-			time.sleep(sleep_time);
+	    for i, myfile in enumerate(result_final):
+                    execBash(load_vim+myfile, is_print=True, no_output=True)[0];
+                    time.sleep(0.3);
+	elif ( choices == "j"):
+            load_vim_arr = load_vim.split()
+
+            if result_java is None:
+                # arg is passed in
+                result_final = result_arr;
+            else:
+                result_final = result_java.split();
+
+            for i, myfile in enumerate(result_final):
+                    #load_vim_arr.append(myfile)
+                    #execBash(load_vim_arr, is_print=True, use_shell=False);
+                    #load_vim_arr.pop()
+
+                    execBash(load_vim+myfile, is_print=True, no_output=True);
+                    time.sleep(sleep_time);
 	elif ( choices == "c"):
 		print("Operation cancelled")
 	elif ( choices == ""):
